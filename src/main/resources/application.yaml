@@ -1,0 +1,3 @@
+spring:
+  application:
+    name: footballay-data-quality-service

@@ -37,6 +37,8 @@ football-data-raw-collected consume
 
 ## 이후 구현 원칙
 
+단계별 실구현 순서와 테스트 완료 조건은 `data-quality-implementation-roadmap.md`를 따른다.
+
 실제 idempotency 구현은 `rawEventId`를 영속적으로 조회해 중복 event를 건너뛰도록 한다. 의도적 재검사는 새 `rawEventId`를 가진 event로 표현한다.
 
 실제 persistence 구현은 동일 interface 뒤에 MongoDB adapter를 추가한다. `quality_results` schema, enum, index는 core의 `mongodb-document-quality_results.md`와 `QualityResultMongoIndexDefinitions`를 그대로 따른다.

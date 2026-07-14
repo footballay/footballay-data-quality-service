@@ -13,10 +13,12 @@ data class DataQualityPipelineProperties(
     data class Reader(
         val type: RawResponseReaderType = RawResponseReaderType.NOOP,
         val mockDataResource: String = "classpath:mock/20260712T033403Z_Iq_XxagJ8LaiRo1Fy1M4oYRNxUhVIp8aOn9jJCmAGWY.json.gz",
+        val localBaseDir: String? = null,
     )
 }
 
 enum class RawResponseReaderType {
     NOOP,
     MOCK_DATA,
+    LOCAL_FILE,
 }

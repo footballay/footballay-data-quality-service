@@ -20,3 +20,4 @@ footballay:
       reader:
         type: noop
         mock-data-resource: classpath:mock/20260712T033403Z_Iq_XxagJ8LaiRo1Fy1M4oYRNxUhVIp8aOn9jJCmAGWY.json.gz
+        local-base-dir: ${FOOTBALLAY_DATA_QUALITY_PIPELINE_READER_LOCAL_BASE_DIR:}

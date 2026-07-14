@@ -9,6 +9,7 @@ import org.springframework.core.io.ResourceLoader
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.core.KafkaTemplate
 import java.time.Clock
+import java.nio.file.Path
 
 @Configuration
 @EnableKafka
@@ -30,6 +31,16 @@ class DataQualityPipelineConfiguration {
                     objectMapper = objectMapper,
                     resource = resourceLoader.getResource(properties.reader.mockDataResource),
                 )
+            RawResponseReaderType.LOCAL_FILE ->
+                LocalFileRawResponseReader(
+                    objectMapper = objectMapper,
+                    baseDir = Path.of(requireLocalBaseDir(properties.reader.localBaseDir)),
+                )
+        }
+
+    private fun requireLocalBaseDir(localBaseDir: String?): String =
+        requireNotNull(localBaseDir?.takeIf { it.isNotBlank() }) {
+            "footballay.data-quality.pipeline.reader.local-base-dir is required for LOCAL_FILE reader"
         }
 
     @Bean

@@ -1,3 +1,22 @@
 spring:
   application:
     name: footballay-data-quality-service
+  kafka:
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+footballay:
+  data-quality:
+    pipeline:
+      enabled: false
+      consumer-group: footballay-data-quality-service
+      raw-collected-topic: football-data-raw-collected
+      quality-result-topic: football-data-quality-result
+      reader:
+        type: noop
+        mock-data-resource: classpath:mock/20260712T033403Z_Iq_XxagJ8LaiRo1Fy1M4oYRNxUhVIp8aOn9jJCmAGWY.json.gz

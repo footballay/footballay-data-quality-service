@@ -43,8 +43,6 @@ out/
 
 plan
 plan/*
-!plan/
-!plan/data-quality-frame-implementation-plan.md
 
 .codex
 .codex/*

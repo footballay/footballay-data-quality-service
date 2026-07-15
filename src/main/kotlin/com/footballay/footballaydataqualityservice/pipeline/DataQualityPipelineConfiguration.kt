@@ -1,6 +1,11 @@
 package com.footballay.footballaydataqualityservice.pipeline
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.footballay.footballaydataqualityservice.inspection.ProcessorRoutingQualityChecker
+import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
+import com.footballay.footballaydataqualityservice.inspection.QualityInspector
+import com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle.ApiSportsFixtureSingleInspectionProcessor
+import com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle.ApiSportsFixtureSingleRootDto
 import com.footballay.footballaydataqualityservice.kafka.KafkaQualityResultPublisher
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -8,8 +13,8 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ResourceLoader
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.core.KafkaTemplate
-import java.time.Clock
 import java.nio.file.Path
+import java.time.Clock
 
 @Configuration
 @EnableKafka
@@ -44,7 +49,17 @@ class DataQualityPipelineConfiguration {
         }
 
     @Bean
-    fun qualityChecker(): QualityChecker = AlwaysHappyQualityChecker()
+    fun apiSportsFixtureSingleInspectionProcessor(
+        objectMapper: ObjectMapper,
+        inspectors: List<QualityInspector<ApiSportsFixtureSingleRootDto>>,
+    ): QualityInspectionProcessor =
+        ApiSportsFixtureSingleInspectionProcessor(
+            objectMapper = objectMapper,
+            inspectors = inspectors,
+        )
+
+    @Bean
+    fun qualityChecker(processors: List<QualityInspectionProcessor>): QualityChecker = ProcessorRoutingQualityChecker(processors)
 
     @Bean
     fun qualityResultStore(): QualityResultStore = NoopQualityResultStore()

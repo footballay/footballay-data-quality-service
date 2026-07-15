@@ -2,6 +2,7 @@ package com.footballay.footballaydataqualityservice.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.TestcontainersConfiguration
+import com.footballay.footballaydataqualityservice.pipeline.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.QualityParameter
 import com.footballay.footballaydataqualityservice.pipeline.QualityResultEvent
 import com.footballay.footballaydataqualityservice.pipeline.RawCollectedEvent
@@ -99,7 +100,7 @@ class DataQualityKafkaFlowIntegrationTest {
     private fun rawEvent(rawEventId: String, rawJsonObjectKey: String) =
         RawCollectedEvent(
             rawEventId = rawEventId,
-            provider = "API_SPORTS",
+            provider = DataProvider.API_SPORTS,
             endpointKey = "fixtureSingle",
             parameters = listOf(QualityParameter("fixtureId", "1582681")),
             canonicalHash = "sha256-base64url",

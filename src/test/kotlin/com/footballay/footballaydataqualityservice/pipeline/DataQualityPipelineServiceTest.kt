@@ -58,7 +58,7 @@ class DataQualityPipelineServiceTest {
                     readCalled = true
                     JsonNodeFactory.instance.objectNode()
                 },
-                qualityChecker = AlwaysHappyQualityChecker(),
+                qualityChecker = { _, _ -> QualityScanResult("test") },
                 resultStore = NoopQualityResultStore(),
                 resultPublisher = { },
                 clock = Clock.systemUTC(),
@@ -72,7 +72,7 @@ class DataQualityPipelineServiceTest {
     private fun rawEvent() =
         RawCollectedEvent(
             rawEventId = "01JZK8T9CJ4S9ZZ9G0E0D7YQ9M",
-            provider = "API_SPORTS",
+            provider = DataProvider.API_SPORTS,
             endpointKey = "fixtureSingle",
             parameters = listOf(QualityParameter("fixtureId", "123456")),
             canonicalHash = "sha256-base64url",

@@ -6,7 +6,7 @@ import java.time.Instant
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class RawCollectedEvent(
     val rawEventId: String,
-    val provider: String,
+    val provider: DataProvider,
     val endpointKey: String,
     val parameters: List<QualityParameter>,
     val canonicalHash: String,

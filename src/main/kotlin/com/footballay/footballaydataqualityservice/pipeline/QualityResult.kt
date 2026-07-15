@@ -5,7 +5,7 @@ import java.time.Instant
 data class QualityResult(
     val resultId: String,
     val rawEventId: String,
-    val provider: String,
+    val provider: DataProvider,
     val endpointKey: String,
     val parameters: List<QualityParameter>,
     val canonicalHash: String,

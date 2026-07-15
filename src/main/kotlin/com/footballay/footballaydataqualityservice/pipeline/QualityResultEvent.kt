@@ -14,7 +14,7 @@ data class QualityResultEvent(
 )
 
 data class QualityResultSource(
-    val provider: String,
+    val provider: DataProvider,
     val endpointKey: String,
     val parameters: List<QualityParameter>,
 )

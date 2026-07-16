@@ -1,9 +1,9 @@
 package com.footballay.footballaydataqualityservice.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.footballay.footballaydataqualityservice.logger
 import com.footballay.footballaydataqualityservice.pipeline.DataQualityPipelineService
 import com.footballay.footballaydataqualityservice.pipeline.RawCollectedEvent
-import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component
@@ -14,7 +14,7 @@ class RawCollectedKafkaListener(
     private val objectMapper: ObjectMapper,
     private val pipelineService: DataQualityPipelineService,
 ) {
-    private val log = LoggerFactory.getLogger(javaClass)
+    private val log = logger()
 
     @KafkaListener(
         topics = ["\${footballay.data-quality.pipeline.raw-collected-topic}"],

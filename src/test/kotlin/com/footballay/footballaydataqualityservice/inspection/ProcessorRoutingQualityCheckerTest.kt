@@ -2,13 +2,11 @@ package com.footballay.footballaydataqualityservice.inspection
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.footballay.footballaydataqualityservice.pipeline.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
-import com.footballay.footballaydataqualityservice.pipeline.RawCollectedEvent
-import com.footballay.footballaydataqualityservice.pipeline.QualityParameter
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalStateException
 import org.junit.jupiter.api.Test
-import java.time.Instant
 
 class ProcessorRoutingQualityCheckerTest {
     @Test
@@ -28,7 +26,7 @@ class ProcessorRoutingQualityCheckerTest {
                 ),
             )
 
-        val result = checker.check(rawEvent(), JsonNodeFactory.instance.objectNode())
+        val result = checker.check(request(), JsonNodeFactory.instance.objectNode())
 
         assertThat(called).isTrue()
         assertThat(supportsCalled).isTrue()
@@ -40,7 +38,7 @@ class ProcessorRoutingQualityCheckerTest {
         val checker = ProcessorRoutingQualityChecker(emptyList())
 
         assertThatIllegalStateException()
-            .isThrownBy { checker.check(rawEvent(), JsonNodeFactory.instance.objectNode()) }
+            .isThrownBy { checker.check(request(), JsonNodeFactory.instance.objectNode()) }
             .withMessageContaining("found 0")
     }
 
@@ -55,7 +53,7 @@ class ProcessorRoutingQualityCheckerTest {
             )
 
         assertThatIllegalStateException()
-            .isThrownBy { checker.check(rawEvent(), JsonNodeFactory.instance.objectNode()) }
+            .isThrownBy { checker.check(request(), JsonNodeFactory.instance.objectNode()) }
             .withMessageContaining("found 2")
     }
 
@@ -69,17 +67,16 @@ class ProcessorRoutingQualityCheckerTest {
                 endpointKey: String,
             ): Boolean = supports(provider, endpointKey)
 
-            override fun inspect(rawJson: com.fasterxml.jackson.databind.JsonNode): QualityScanResult = inspect()
+            override fun inspect(
+                request: QualityCheckRequest,
+                rawJson: com.fasterxml.jackson.databind.JsonNode,
+            ): QualityScanResult = inspect()
         }
 
-    private fun rawEvent() =
-        RawCollectedEvent(
-            rawEventId = "01JZK8T9CJ4S9ZZ9G0E0D7YQ9M",
+    private fun request() =
+        QualityCheckRequest(
             provider = DataProvider.API_SPORTS,
             endpointKey = "fixtureSingle",
-            parameters = listOf(QualityParameter("fixtureId", "123456")),
-            canonicalHash = "sha256-base64url",
-            rawJsonObjectKey = "football-data/raw/example.json.gz",
-            collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
+            parameters = mapOf("fixtureId" to listOf("123456")),
         )
 }

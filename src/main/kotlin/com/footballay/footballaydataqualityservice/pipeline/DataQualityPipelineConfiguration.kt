@@ -3,9 +3,6 @@ package com.footballay.footballaydataqualityservice.pipeline
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.inspection.ProcessorRoutingQualityChecker
 import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
-import com.footballay.footballaydataqualityservice.inspection.QualityInspector
-import com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle.ApiSportsFixtureSingleInspectionProcessor
-import com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle.ApiSportsFixtureSingleRootDto
 import com.footballay.footballaydataqualityservice.kafka.KafkaQualityResultPublisher
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -47,16 +44,6 @@ class DataQualityPipelineConfiguration {
         requireNotNull(localBaseDir?.takeIf { it.isNotBlank() }) {
             "footballay.data-quality.pipeline.reader.local-base-dir is required for LOCAL_FILE reader"
         }
-
-    @Bean
-    fun apiSportsFixtureSingleInspectionProcessor(
-        objectMapper: ObjectMapper,
-        inspectors: List<QualityInspector<ApiSportsFixtureSingleRootDto>>,
-    ): QualityInspectionProcessor =
-        ApiSportsFixtureSingleInspectionProcessor(
-            objectMapper = objectMapper,
-            inspectors = inspectors,
-        )
 
     @Bean
     fun qualityChecker(processors: List<QualityInspectionProcessor>): QualityChecker = ProcessorRoutingQualityChecker(processors)

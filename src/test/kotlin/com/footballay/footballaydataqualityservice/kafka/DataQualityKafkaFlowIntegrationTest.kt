@@ -2,10 +2,10 @@ package com.footballay.footballaydataqualityservice.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.TestcontainersConfiguration
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityParameter
-import com.footballay.footballaydataqualityservice.pipeline.QualityResultEvent
-import com.footballay.footballaydataqualityservice.pipeline.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
+import com.footballay.footballaydataqualityservice.pipeline.input.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResultEvent
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer

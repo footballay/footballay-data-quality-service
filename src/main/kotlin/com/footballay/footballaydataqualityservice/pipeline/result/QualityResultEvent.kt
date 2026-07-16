@@ -1,5 +1,7 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.result
 
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
 import java.time.Instant
 
 data class QualityResultEvent(

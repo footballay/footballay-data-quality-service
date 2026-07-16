@@ -1,4 +1,4 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.rawresponse
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.assertj.core.api.Assertions.assertThat

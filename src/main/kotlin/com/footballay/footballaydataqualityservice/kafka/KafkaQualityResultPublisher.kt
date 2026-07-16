@@ -2,9 +2,9 @@ package com.footballay.footballaydataqualityservice.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.logger
-import com.footballay.footballaydataqualityservice.pipeline.QualityResult
-import com.footballay.footballaydataqualityservice.pipeline.QualityResultPublisher
-import com.footballay.footballaydataqualityservice.pipeline.toEvent
+import com.footballay.footballaydataqualityservice.pipeline.port.QualityResultPublisher
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResult
+import com.footballay.footballaydataqualityservice.pipeline.result.toEvent
 import org.springframework.kafka.core.KafkaTemplate
 
 class KafkaQualityResultPublisher(

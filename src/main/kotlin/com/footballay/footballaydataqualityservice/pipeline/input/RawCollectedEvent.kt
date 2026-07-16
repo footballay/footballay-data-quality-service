@@ -1,4 +1,4 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.input
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.time.Instant

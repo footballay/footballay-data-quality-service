@@ -1,4 +1,4 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.idempotency
 
 fun interface RawEventIdempotencyChecker {
     fun shouldProcess(rawEventId: String): Boolean

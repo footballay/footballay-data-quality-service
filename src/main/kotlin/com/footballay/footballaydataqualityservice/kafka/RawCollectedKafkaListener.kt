@@ -2,8 +2,8 @@ package com.footballay.footballaydataqualityservice.kafka
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.logger
-import com.footballay.footballaydataqualityservice.pipeline.DataQualityPipelineService
-import com.footballay.footballaydataqualityservice.pipeline.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.input.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.processing.DataQualityPipelineService
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.annotation.KafkaListener
 import org.springframework.stereotype.Component

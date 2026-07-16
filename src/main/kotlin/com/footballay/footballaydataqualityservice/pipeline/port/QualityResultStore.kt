@@ -1,4 +1,6 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.port
+
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResult
 
 fun interface QualityResultStore {
     fun save(result: QualityResult): QualityResult

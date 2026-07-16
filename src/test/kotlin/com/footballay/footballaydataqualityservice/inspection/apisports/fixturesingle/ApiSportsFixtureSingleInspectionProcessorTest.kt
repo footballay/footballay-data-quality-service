@@ -6,8 +6,8 @@ import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test

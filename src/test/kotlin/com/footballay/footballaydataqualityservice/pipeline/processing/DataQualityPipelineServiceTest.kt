@@ -1,10 +1,21 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.processing
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
+import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
+import com.footballay.footballaydataqualityservice.pipeline.input.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.port.NoopQualityResultStore
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityCheckStatus
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityIssueCheckStatus
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityMaxSeverity
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResponseLocation
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResult
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Clock

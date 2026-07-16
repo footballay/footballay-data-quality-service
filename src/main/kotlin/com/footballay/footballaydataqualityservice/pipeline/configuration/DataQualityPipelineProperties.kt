@@ -1,4 +1,4 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.configuration
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 

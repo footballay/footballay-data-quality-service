@@ -1,4 +1,4 @@
-package com.footballay.footballaydataqualityservice.pipeline
+package com.footballay.footballaydataqualityservice.pipeline.input
 
 import com.fasterxml.jackson.annotation.JsonCreator
 import java.util.Locale

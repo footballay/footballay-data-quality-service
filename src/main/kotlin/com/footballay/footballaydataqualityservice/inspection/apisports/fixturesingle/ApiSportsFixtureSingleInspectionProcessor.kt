@@ -10,9 +10,9 @@ import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.logger
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 
 /** API Sports Fixture Single 응답을 관측 DTO로 변환하고 전용 Inspector를 실행한다. */
 class ApiSportsFixtureSingleInspectionProcessor(

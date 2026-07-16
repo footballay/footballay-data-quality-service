@@ -2,8 +2,8 @@ package com.footballay.footballaydataqualityservice.inspection.apisports.fixture
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.runner.ApplicationContextRunner

@@ -1,9 +1,9 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalStateException
 import org.junit.jupiter.api.Test

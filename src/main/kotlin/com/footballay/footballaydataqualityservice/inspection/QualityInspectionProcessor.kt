@@ -1,9 +1,9 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.footballay.footballaydataqualityservice.pipeline.DataProvider
-import com.footballay.footballaydataqualityservice.pipeline.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
+import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 
 interface QualityInspectionProcessor {
     fun supports(

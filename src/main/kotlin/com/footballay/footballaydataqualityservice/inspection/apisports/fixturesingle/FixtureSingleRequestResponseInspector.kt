@@ -8,10 +8,10 @@ import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequestResponse> {
     override fun inspect(target: FixtureSingleRequestResponse): List<InspectionFinding> {
         val requestedFixtureId = target.request.fixtureId ?: return emptyList()
-        val issues = mutableListOf<InspectionFinding>()
+        val findings = mutableListOf<InspectionFinding>()
 
         if (target.response.parameters != null && target.response.parameters.id == null) {
-            issues +=
+            findings +=
                 fixtureSingleFinding(
                     code = "PARAMETER_FIXTURE_ID_MISSING",
                     severity = InspectionSeverity.WARN,
@@ -25,18 +25,22 @@ class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequ
         target.response.response.orEmpty().forEachIndexed { index, response ->
             val fixtureId = response?.fixture?.id ?: return@forEachIndexed
             if (fixtureId > 0 && fixtureId != requestedFixtureId) {
-                issues +=
+                findings +=
                     fixtureSingleFinding(
                         code = "FIXTURE_ID_REQUEST_MISMATCH",
                         severity = InspectionSeverity.ERROR,
                         title = "Fixture ID does not match request",
                         section = "fixture",
                         path = "$.response[$index].fixture.id",
-                        evidence = fixtureSingleEvidence("requestedFixtureId" to requestedFixtureId.toString(), "actualFixtureId" to fixtureId.toString()),
+                        evidence =
+                            fixtureSingleEvidence(
+                                "requestedFixtureId" to requestedFixtureId.toString(),
+                                "actualFixtureId" to fixtureId.toString(),
+                            ),
                     )
             }
         }
 
-        return issues
+        return findings
     }
 }

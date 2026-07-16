@@ -10,77 +10,257 @@ import java.time.OffsetDateTime
 class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<InspectionFinding> {
         val root = target
-        val issues = mutableListOf<InspectionFinding>()
+        val findings = mutableListOf<InspectionFinding>()
 
         root.response.orEmpty().forEachIndexed { index, response ->
             if (response == null) return@forEachIndexed
             val fixture = response.fixture
             val fixturePath = "$.response[$index].fixture"
             if (fixture == null) {
-                issues += issue("FIXTURE_OBJECT_NULL", InspectionSeverity.CRITICAL, "Fixture object is null", fixturePath, evidence("responseIndex" to index.toString()))
+                findings +=
+                    issue(
+                        "FIXTURE_OBJECT_NULL",
+                        InspectionSeverity.CRITICAL,
+                        "Fixture object is null",
+                        fixturePath,
+                        evidence("responseIndex" to index.toString()),
+                    )
                 return@forEachIndexed
             }
 
-            inspectIdentifier(issues, fixture, fixturePath)
-            inspectTime(issues, fixture, fixturePath)
-            inspectVenueAndReferee(issues, fixture, fixturePath)
+            inspectIdentifier(findings, fixture, fixturePath)
+            inspectTime(findings, fixture, fixturePath)
+            inspectVenueAndReferee(findings, fixture, fixturePath)
         }
-        return issues
+        return findings
     }
 
     private fun inspectIdentifier(
-        issues: MutableList<InspectionFinding>,
+        findings: MutableList<InspectionFinding>,
         fixture: ApiSportsFixtureSingleFixtureDto,
         fixturePath: String,
     ) {
         when {
-            fixture.id == null -> issues += issue("FIXTURE_ID_NULL", InspectionSeverity.CRITICAL, "Fixture ID is null", "$fixturePath.id", evidence("fixtureId" to null))
-            fixture.id <= 0 -> issues += issue("FIXTURE_ID_NON_POSITIVE", InspectionSeverity.ERROR, "Fixture ID is not positive", "$fixturePath.id", evidence("fixtureId" to fixture.id.toString()))
+            fixture.id == null ->
+                findings +=
+                    issue(
+                        "FIXTURE_ID_NULL",
+                        InspectionSeverity.CRITICAL,
+                        "Fixture ID is null",
+                        "$fixturePath.id",
+                        evidence("fixtureId" to null),
+                    )
+            fixture.id <= 0 ->
+                findings +=
+                    issue(
+                        "FIXTURE_ID_NON_POSITIVE",
+                        InspectionSeverity.ERROR,
+                        "Fixture ID is not positive",
+                        "$fixturePath.id",
+                        evidence("fixtureId" to fixture.id.toString()),
+                    )
         }
     }
 
     private fun inspectTime(
-        issues: MutableList<InspectionFinding>,
+        findings: MutableList<InspectionFinding>,
         fixture: ApiSportsFixtureSingleFixtureDto,
         fixturePath: String,
     ) {
         when {
-            fixture.timezone == null -> issues += issue("FIXTURE_TIMEZONE_NULL", InspectionSeverity.WARN, "Fixture timezone is null", "$fixturePath.timezone", evidence("timezone" to null))
-            fixture.timezone.isBlank() -> issues += issue("FIXTURE_TIMEZONE_BLANK", InspectionSeverity.WARN, "Fixture timezone is blank", "$fixturePath.timezone", evidence("timezone" to fixture.timezone))
+            fixture.timezone == null ->
+                findings +=
+                    issue(
+                        "FIXTURE_TIMEZONE_NULL",
+                        InspectionSeverity.WARN,
+                        "Fixture timezone is null",
+                        "$fixturePath.timezone",
+                        evidence("timezone" to null),
+                    )
+            fixture.timezone.isBlank() ->
+                findings +=
+                    issue(
+                        "FIXTURE_TIMEZONE_BLANK",
+                        InspectionSeverity.WARN,
+                        "Fixture timezone is blank",
+                        "$fixturePath.timezone",
+                        evidence("timezone" to fixture.timezone),
+                    )
         }
 
         val kickoff = fixture.date?.let { runCatching { OffsetDateTime.parse(it).toInstant().epochSecond }.getOrNull() }
         when {
-            fixture.date == null -> issues += issue("FIXTURE_DATE_NULL", InspectionSeverity.ERROR, "Fixture date is null", "$fixturePath.date", evidence("date" to null))
-            kickoff == null -> issues += issue("FIXTURE_DATE_INVALID_FORMAT", InspectionSeverity.ERROR, "Fixture date format is invalid", "$fixturePath.date", evidence("date" to fixture.date))
+            fixture.date == null ->
+                findings +=
+                    issue(
+                        "FIXTURE_DATE_NULL",
+                        InspectionSeverity.ERROR,
+                        "Fixture date is null",
+                        "$fixturePath.date",
+                        evidence("date" to null),
+                    )
+            kickoff == null ->
+                findings +=
+                    issue(
+                        "FIXTURE_DATE_INVALID_FORMAT",
+                        InspectionSeverity.ERROR,
+                        "Fixture date format is invalid",
+                        "$fixturePath.date",
+                        evidence("date" to fixture.date),
+                    )
         }
         when {
-            fixture.timestamp == null -> issues += issue("FIXTURE_TIMESTAMP_NULL", InspectionSeverity.ERROR, "Fixture timestamp is null", "$fixturePath.timestamp", evidence("timestamp" to null))
-            fixture.timestamp <= 0 -> issues += issue("FIXTURE_TIMESTAMP_NON_POSITIVE", InspectionSeverity.ERROR, "Fixture timestamp is not positive", "$fixturePath.timestamp", evidence("timestamp" to fixture.timestamp.toString()))
-            kickoff != null && kickoff != fixture.timestamp -> issues += issue("FIXTURE_DATE_TIMESTAMP_MISMATCH", InspectionSeverity.ERROR, "Fixture date and timestamp do not match", fixturePath, evidence("date" to fixture.date, "timestamp" to fixture.timestamp.toString(), "parsedDateEpochSecond" to kickoff.toString()))
+            fixture.timestamp == null ->
+                findings +=
+                    issue(
+                        "FIXTURE_TIMESTAMP_NULL",
+                        InspectionSeverity.ERROR,
+                        "Fixture timestamp is null",
+                        "$fixturePath.timestamp",
+                        evidence("timestamp" to null),
+                    )
+            fixture.timestamp <= 0 ->
+                findings +=
+                    issue(
+                        "FIXTURE_TIMESTAMP_NON_POSITIVE",
+                        InspectionSeverity.ERROR,
+                        "Fixture timestamp is not positive",
+                        "$fixturePath.timestamp",
+                        evidence("timestamp" to fixture.timestamp.toString()),
+                    )
+            kickoff != null && kickoff != fixture.timestamp ->
+                findings +=
+                    issue(
+                        "FIXTURE_DATE_TIMESTAMP_MISMATCH",
+                        InspectionSeverity.ERROR,
+                        "Fixture date and timestamp do not match",
+                        fixturePath,
+                        evidence(
+                            "date" to fixture.date,
+                            "timestamp" to fixture.timestamp.toString(),
+                            "parsedDateEpochSecond" to kickoff.toString(),
+                        ),
+                    )
         }
 
         val periods = fixture.periods ?: run {
-            issues += issue("PERIODS_NULL", InspectionSeverity.WARN, "Fixture periods are null", "$fixturePath.periods", evidence("fixtureId" to fixture.id?.toString()))
+            findings +=
+                issue(
+                    "PERIODS_NULL",
+                    InspectionSeverity.WARN,
+                    "Fixture periods are null",
+                    "$fixturePath.periods",
+                    evidence("fixtureId" to fixture.id?.toString()),
+                )
             return
         }
-        if (periods.first != null && periods.first <= 0) issues += issue("FIRST_PERIOD_TIMESTAMP_INVALID", InspectionSeverity.WARN, "First period timestamp is invalid", "$fixturePath.periods.first", evidence("firstPeriodTimestamp" to periods.first.toString()))
-        if (periods.second != null && periods.second <= 0) issues += issue("SECOND_PERIOD_TIMESTAMP_INVALID", InspectionSeverity.WARN, "Second period timestamp is invalid", "$fixturePath.periods.second", evidence("secondPeriodTimestamp" to periods.second.toString()))
-        if (periods.first != null && periods.second != null && periods.second < periods.first) issues += issue("SECOND_PERIOD_BEFORE_FIRST", InspectionSeverity.ERROR, "Second period is before first period", "$fixturePath.periods.second", evidence("firstPeriodTimestamp" to periods.first.toString(), "secondPeriodTimestamp" to periods.second.toString()))
-        if (kickoff != null && periods.first != null && periods.first < kickoff) issues += issue("FIRST_PERIOD_BEFORE_KICKOFF", InspectionSeverity.WARN, "First period is before kickoff", "$fixturePath.periods.first", evidence("firstPeriodTimestamp" to periods.first.toString(), "kickoffTimestamp" to kickoff.toString()))
-        if (kickoff != null && periods.second != null && periods.second < kickoff) issues += issue("SECOND_PERIOD_BEFORE_KICKOFF", InspectionSeverity.WARN, "Second period is before kickoff", "$fixturePath.periods.second", evidence("secondPeriodTimestamp" to periods.second.toString(), "kickoffTimestamp" to kickoff.toString()))
+        if (periods.first != null && periods.first <= 0) {
+            findings +=
+                issue(
+                    "FIRST_PERIOD_TIMESTAMP_INVALID",
+                    InspectionSeverity.WARN,
+                    "First period timestamp is invalid",
+                    "$fixturePath.periods.first",
+                    evidence("firstPeriodTimestamp" to periods.first.toString()),
+                )
+        }
+        if (periods.second != null && periods.second <= 0) {
+            findings +=
+                issue(
+                    "SECOND_PERIOD_TIMESTAMP_INVALID",
+                    InspectionSeverity.WARN,
+                    "Second period timestamp is invalid",
+                    "$fixturePath.periods.second",
+                    evidence("secondPeriodTimestamp" to periods.second.toString()),
+                )
+        }
+        if (periods.first != null && periods.second != null && periods.second < periods.first) {
+            findings +=
+                issue(
+                    "SECOND_PERIOD_BEFORE_FIRST",
+                    InspectionSeverity.ERROR,
+                    "Second period is before first period",
+                    "$fixturePath.periods.second",
+                    evidence(
+                        "firstPeriodTimestamp" to periods.first.toString(),
+                        "secondPeriodTimestamp" to periods.second.toString(),
+                    ),
+                )
+        }
+        if (kickoff != null && periods.first != null && periods.first < kickoff) {
+            findings +=
+                issue(
+                    "FIRST_PERIOD_BEFORE_KICKOFF",
+                    InspectionSeverity.WARN,
+                    "First period is before kickoff",
+                    "$fixturePath.periods.first",
+                    evidence(
+                        "firstPeriodTimestamp" to periods.first.toString(),
+                        "kickoffTimestamp" to kickoff.toString(),
+                    ),
+                )
+        }
+        if (kickoff != null && periods.second != null && periods.second < kickoff) {
+            findings +=
+                issue(
+                    "SECOND_PERIOD_BEFORE_KICKOFF",
+                    InspectionSeverity.ERROR,
+                    "Second period is before kickoff",
+                    "$fixturePath.periods.second",
+                    evidence(
+                        "secondPeriodTimestamp" to periods.second.toString(),
+                        "kickoffTimestamp" to kickoff.toString(),
+                    ),
+                )
+        }
     }
 
     private fun inspectVenueAndReferee(
-        issues: MutableList<InspectionFinding>,
+        findings: MutableList<InspectionFinding>,
         fixture: ApiSportsFixtureSingleFixtureDto,
         fixturePath: String,
     ) {
-        if (fixture.referee?.isBlank() == true) issues += issue("REFEREE_BLANK", InspectionSeverity.INFO, "Fixture referee is blank", "$fixturePath.referee", evidence("referee" to fixture.referee))
+        if (fixture.referee?.isBlank() == true) {
+            findings +=
+                issue(
+                    "REFEREE_BLANK",
+                    InspectionSeverity.INFO,
+                    "Fixture referee is blank",
+                    "$fixturePath.referee",
+                    evidence("referee" to fixture.referee),
+                )
+        }
         val venue = fixture.venue ?: return
-        if (venue.id != null && venue.id <= 0) issues += issue("VENUE_ID_NON_POSITIVE", InspectionSeverity.WARN, "Venue ID is not positive", "$fixturePath.venue.id", evidence("venueId" to venue.id.toString()))
-        if (venue.name?.isBlank() == true) issues += issue("VENUE_NAME_BLANK", InspectionSeverity.WARN, "Venue name is blank", "$fixturePath.venue.name", evidence("venueName" to venue.name))
-        if (venue.city?.isBlank() == true) issues += issue("VENUE_CITY_BLANK", InspectionSeverity.INFO, "Venue city is blank", "$fixturePath.venue.city", evidence("venueCity" to venue.city))
+        if (venue.id != null && venue.id <= 0) {
+            findings +=
+                issue(
+                    "VENUE_ID_NON_POSITIVE",
+                    InspectionSeverity.WARN,
+                    "Venue ID is not positive",
+                    "$fixturePath.venue.id",
+                    evidence("venueId" to venue.id.toString()),
+                )
+        }
+        if (venue.name?.isBlank() == true) {
+            findings +=
+                issue(
+                    "VENUE_NAME_BLANK",
+                    InspectionSeverity.WARN,
+                    "Venue name is blank",
+                    "$fixturePath.venue.name",
+                    evidence("venueName" to venue.name),
+                )
+        }
+        if (venue.city?.isBlank() == true) {
+            findings +=
+                issue(
+                    "VENUE_CITY_BLANK",
+                    InspectionSeverity.INFO,
+                    "Venue city is blank",
+                    "$fixturePath.venue.city",
+                    evidence("venueCity" to venue.city),
+                )
+        }
     }
 
     private fun issue(

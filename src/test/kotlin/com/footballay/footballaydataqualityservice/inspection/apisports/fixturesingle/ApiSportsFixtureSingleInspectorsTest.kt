@@ -1,6 +1,7 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test
@@ -76,6 +77,29 @@ class ApiSportsFixtureSingleInspectorsTest {
                 "VENUE_NAME_BLANK",
                 "VENUE_CITY_BLANK",
             )
+    }
+
+    @Test
+    fun `reports an error when the second period is before kickoff`() {
+        val target =
+            targetOf(
+                """
+                {
+                  "response": [{
+                    "fixture": {
+                      "date": "2026-07-13T00:00:00+00:00",
+                      "timestamp": 1783900800,
+                      "periods": {"second": 1783900799}
+                    }
+                  }]
+                }
+                """.trimIndent(),
+            )
+
+        val findings = FixtureInspector().inspect(target)
+
+        assertThat(findings.single { it.suggestedTypeCode == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
+            .isEqualTo(InspectionSeverity.ERROR)
     }
 
     @Test

@@ -1,11 +1,12 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import java.time.OffsetDateTime
 
 /** API Sports Fixture Single fixture 기본 정보와 시간 정보를 검사한다. */
@@ -268,36 +269,38 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     }
 
     private fun issue(
-        code: InspectionCode,
+        code: Code,
         severity: InspectionSeverity,
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(inspectionScope, code, severity, title, "fixture", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, "fixture", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 
-    private enum class Code : InspectionCode {
-        OBJECT_NULL,
-        ID_NULL,
-        ID_NON_POSITIVE,
-        TIMEZONE_NULL,
-        TIMEZONE_BLANK,
-        DATE_NULL,
-        DATE_INVALID_FORMAT,
-        TIMESTAMP_NULL,
-        TIMESTAMP_NON_POSITIVE,
-        DATE_TIMESTAMP_MISMATCH,
-        PERIODS_NULL,
-        FIRST_PERIOD_TIMESTAMP_INVALID,
-        SECOND_PERIOD_TIMESTAMP_INVALID,
-        SECOND_PERIOD_BEFORE_FIRST,
-        FIRST_PERIOD_BEFORE_KICKOFF,
-        SECOND_PERIOD_BEFORE_KICKOFF,
-        REFEREE_BLANK,
-        VENUE_ID_NON_POSITIVE,
-        VENUE_NAME_BLANK,
-        VENUE_CITY_BLANK,
+    private enum class Code(
+        val suggestedType: QualityIssueType,
+    ) : InspectionRuleCode {
+        OBJECT_NULL(QualityIssueType.UNEXPECTED_NULL),
+        ID_NULL(QualityIssueType.UNEXPECTED_NULL),
+        ID_NON_POSITIVE(QualityIssueType.OUT_OF_RANGE),
+        TIMEZONE_NULL(QualityIssueType.UNEXPECTED_NULL),
+        TIMEZONE_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        DATE_NULL(QualityIssueType.UNEXPECTED_NULL),
+        DATE_INVALID_FORMAT(QualityIssueType.INVALID_FORMAT),
+        TIMESTAMP_NULL(QualityIssueType.UNEXPECTED_NULL),
+        TIMESTAMP_NON_POSITIVE(QualityIssueType.OUT_OF_RANGE),
+        DATE_TIMESTAMP_MISMATCH(QualityIssueType.INCONSISTENT_INFORMATION),
+        PERIODS_NULL(QualityIssueType.UNEXPECTED_NULL),
+        FIRST_PERIOD_TIMESTAMP_INVALID(QualityIssueType.OUT_OF_RANGE),
+        SECOND_PERIOD_TIMESTAMP_INVALID(QualityIssueType.OUT_OF_RANGE),
+        SECOND_PERIOD_BEFORE_FIRST(QualityIssueType.INCONSISTENT_INFORMATION),
+        FIRST_PERIOD_BEFORE_KICKOFF(QualityIssueType.INCONSISTENT_INFORMATION),
+        SECOND_PERIOD_BEFORE_KICKOFF(QualityIssueType.INCONSISTENT_INFORMATION),
+        REFEREE_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        VENUE_ID_NON_POSITIVE(QualityIssueType.OUT_OF_RANGE),
+        VENUE_NAME_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        VENUE_CITY_BLANK(QualityIssueType.UNEXPECTED_BLANK),
         ;
 
         override val value: String

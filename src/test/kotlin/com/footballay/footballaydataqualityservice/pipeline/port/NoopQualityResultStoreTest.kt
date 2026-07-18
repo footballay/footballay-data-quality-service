@@ -1,5 +1,6 @@
 package com.footballay.footballaydataqualityservice.pipeline.port
 
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityCheckStatus
@@ -20,8 +21,8 @@ class NoopQualityResultStoreTest {
     fun `materializes identifiers audit values and summaries for issue writes`() {
         val writes =
             listOf(
-                issue("APISPORTS:FIXTURE_SINGLE:PLAYER_ID_NULL", QualityIssueSeverity.WARN),
-                issue("APISPORTS:FIXTURE_SINGLE:PLAYER_ID_NULL", QualityIssueSeverity.CRITICAL),
+                issue("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL", QualityIssueSeverity.WARN),
+                issue("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL", QualityIssueSeverity.CRITICAL),
             )
 
         val result = NoopQualityResultStore().save(write(writes))
@@ -29,6 +30,8 @@ class NoopQualityResultStoreTest {
         assertThat(result.resultId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(result.issues.map { it.issueInstanceId }).doesNotHaveDuplicates()
         assertThat(result.issues).allSatisfy { issue ->
+            assertThat(issue.suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
+            assertThat(issue.inspectionRuleCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL")
             assertThat(issue.confirmedTypeCode).isNull()
             assertThat(issue.checkStatus).isEqualTo(QualityIssueCheckStatus.NEED_CHECK)
             assertThat(issue.createdAt).isEqualTo(checkedAt)
@@ -52,11 +55,12 @@ class NoopQualityResultStoreTest {
     }
 
     private fun issue(
-        code: String,
+        inspectionRuleCode: String,
         severity: QualityIssueSeverity,
     ) =
         QualityIssueWrite(
-            suggestedTypeCode = code,
+            suggestedTypeCode = QualityIssueType.UNEXPECTED_NULL,
+            inspectionRuleCode = inspectionRuleCode,
             severity = severity,
             title = "Player ID is null",
             responseLocation = QualityResponseLocation("players", "$.response[0].player.id"),

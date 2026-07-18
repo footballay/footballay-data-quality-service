@@ -41,6 +41,7 @@ class NoopQualityResultStore : QualityResultStore {
         QualityIssue(
             issueInstanceId = newId(auditAt.toEpochMilli()),
             suggestedTypeCode = suggestedTypeCode,
+            inspectionRuleCode = inspectionRuleCode,
             confirmedTypeCode = null,
             checkStatus = QualityIssueCheckStatus.NEED_CHECK,
             severity = severity,

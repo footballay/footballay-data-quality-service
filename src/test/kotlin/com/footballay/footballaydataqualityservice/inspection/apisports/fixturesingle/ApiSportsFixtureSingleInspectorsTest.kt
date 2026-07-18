@@ -2,6 +2,7 @@ package com.footballay.footballaydataqualityservice.inspection.apisports.fixture
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.entry
 import org.junit.jupiter.api.Test
@@ -28,7 +29,7 @@ class ApiSportsFixtureSingleInspectorsTest {
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
         assertThat(issues.map { it.inspectionScope.value }).containsOnly("ROOT")
-        assertThat(issues.map { it.inspectionCode.value })
+        assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "PARAMETER_ID_INVALID",
                 "ERRORS_PRESENT",
@@ -37,6 +38,16 @@ class ApiSportsFixtureSingleInspectorsTest {
                 "RESULTS_RESPONSE_SIZE_MISMATCH",
                 "SINGLE_FIXTURE_RESULTS_NOT_ONE",
                 "RESPONSE_EMPTY",
+            )
+        assertThat(issues.map { it.suggestedType })
+            .containsExactly(
+                QualityIssueType.INVALID_FORMAT,
+                QualityIssueType.UPSTREAM_ERROR,
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.INCONSISTENT_INFORMATION,
+                QualityIssueType.UNEXPECTED_RESPONSE,
+                QualityIssueType.UNEXPECTED_RESPONSE,
             )
         assertThat(issues.first().evidence?.values).containsExactly(entry("actualFixtureId", "invalid"))
         assertThat(issues[1].evidence).isNull()
@@ -67,7 +78,7 @@ class ApiSportsFixtureSingleInspectorsTest {
         val issues = FixtureInspector().inspect(target)
 
         assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE")
-        assertThat(issues.map { it.inspectionCode.value })
+        assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "ID_NON_POSITIVE",
                 "TIMEZONE_BLANK",
@@ -78,6 +89,18 @@ class ApiSportsFixtureSingleInspectorsTest {
                 "VENUE_ID_NON_POSITIVE",
                 "VENUE_NAME_BLANK",
                 "VENUE_CITY_BLANK",
+            )
+        assertThat(issues.map { it.suggestedType })
+            .containsExactly(
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.UNEXPECTED_BLANK,
+                QualityIssueType.INVALID_FORMAT,
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.INCONSISTENT_INFORMATION,
+                QualityIssueType.UNEXPECTED_BLANK,
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.UNEXPECTED_BLANK,
+                QualityIssueType.UNEXPECTED_BLANK,
             )
     }
 
@@ -100,9 +123,9 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val findings = FixtureInspector().inspect(target)
 
-        assertThat(findings.single { it.inspectionCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.inspectionScope.value)
+        assertThat(findings.single { it.inspectionRuleCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.inspectionScope.value)
             .isEqualTo("FIXTURE")
-        assertThat(findings.single { it.inspectionCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
+        assertThat(findings.single { it.inspectionRuleCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
             .isEqualTo(InspectionSeverity.ERROR)
     }
 
@@ -112,9 +135,9 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.inspectionCode.value })
+        assertThat(issues.map { it.inspectionRuleCode.value })
             .contains("ERRORS_PRESENT")
-        assertThat(issues.first { it.inspectionCode.value == "ERRORS_PRESENT" }.evidence).isNull()
+        assertThat(issues.first { it.inspectionRuleCode.value == "ERRORS_PRESENT" }.evidence).isNull()
     }
 
     @Test
@@ -135,12 +158,19 @@ class ApiSportsFixtureSingleInspectorsTest {
         val issues = FixtureStatusInspector().inspect(target)
 
         assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE_STATUS")
-        assertThat(issues.map { it.inspectionCode.value })
+        assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "LONG_BLANK",
                 "SHORT_NULL",
                 "ELAPSED_NEGATIVE",
                 "EXTRA_NEGATIVE",
+            )
+        assertThat(issues.map { it.suggestedType })
+            .containsExactly(
+                QualityIssueType.UNEXPECTED_BLANK,
+                QualityIssueType.UNEXPECTED_NULL,
+                QualityIssueType.OUT_OF_RANGE,
+                QualityIssueType.OUT_OF_RANGE,
             )
     }
 
@@ -160,8 +190,32 @@ class ApiSportsFixtureSingleInspectorsTest {
         val issues = FixtureSingleRequestResponseInspector().inspect(target)
 
         assertThat(issues.map { it.inspectionScope.value }).containsOnly("REQUEST_RESPONSE")
-        assertThat(issues.map { it.inspectionCode.value })
+        assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH")
+        assertThat(issues.map { it.suggestedType })
+            .containsExactly(QualityIssueType.UNEXPECTED_NULL, QualityIssueType.INCONSISTENT_INFORMATION)
+    }
+
+    @Test
+    fun `reports a mismatch between request and response parameter fixture IDs`() {
+        val target =
+            FixtureSingleRequestResponse(
+                request = FixtureSingleRequest(123456),
+                response = targetOf("""{"parameters":{"id":"654321"},"response":[]}"""),
+            )
+
+        val issue = FixtureSingleRequestResponseInspector().inspect(target).single()
+
+        assertThat(issue.inspectionScope.value).isEqualTo("REQUEST_RESPONSE")
+        assertThat(issue.inspectionRuleCode.value).isEqualTo("PARAMETER_ID_MISMATCH")
+        assertThat(issue.suggestedType).isEqualTo(QualityIssueType.INCONSISTENT_INFORMATION)
+        assertThat(issue.severity).isEqualTo(InspectionSeverity.ERROR)
+        assertThat(issue.responseLocation.path).isEqualTo("$.parameters.id")
+        assertThat(issue.evidence?.values)
+            .containsExactly(
+                entry("requestedFixtureId", "123456"),
+                entry("responseParameterFixtureId", "654321"),
+            )
     }
 
     @Test

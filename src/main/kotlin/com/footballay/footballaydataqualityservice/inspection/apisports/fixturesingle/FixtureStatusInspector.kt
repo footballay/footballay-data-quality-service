@@ -1,11 +1,12 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 /** API Sports Fixture Single fixture status의 기본 무결성을 검사한다. */
 class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
@@ -104,24 +105,26 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     }
 
     private fun issue(
-        code: InspectionCode,
+        code: Code,
         severity: InspectionSeverity,
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(inspectionScope, code, severity, title, "fixture.status", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, "fixture.status", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 
-    private enum class Code : InspectionCode {
-        OBJECT_NULL,
-        LONG_NULL,
-        LONG_BLANK,
-        SHORT_NULL,
-        SHORT_BLANK,
-        ELAPSED_NEGATIVE,
-        EXTRA_NEGATIVE,
-        EXTRA_WITHOUT_ELAPSED,
+    private enum class Code(
+        val suggestedType: QualityIssueType,
+    ) : InspectionRuleCode {
+        OBJECT_NULL(QualityIssueType.UNEXPECTED_NULL),
+        LONG_NULL(QualityIssueType.UNEXPECTED_NULL),
+        LONG_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        SHORT_NULL(QualityIssueType.UNEXPECTED_NULL),
+        SHORT_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        ELAPSED_NEGATIVE(QualityIssueType.OUT_OF_RANGE),
+        EXTRA_NEGATIVE(QualityIssueType.OUT_OF_RANGE),
+        EXTRA_WITHOUT_ELAPSED(QualityIssueType.INCONSISTENT_INFORMATION),
         ;
 
         override val value: String

@@ -8,8 +8,9 @@ interface QualityInspector<T> {
 
 /** Inspector가 대상 데이터에서 발견한 품질 문제를 표현한다. */
 data class FoundIssue(
+    val suggestedType: QualityIssueType,
     val inspectionScope: InspectionScope,
-    val inspectionCode: InspectionCode,
+    val inspectionRuleCode: InspectionRuleCode,
     val severity: InspectionSeverity,
     val title: String,
     val responseLocation: InspectionResponseLocation,

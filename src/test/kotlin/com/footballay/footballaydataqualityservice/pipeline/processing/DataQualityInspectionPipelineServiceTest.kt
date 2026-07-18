@@ -3,10 +3,11 @@ package com.footballay.footballaydataqualityservice.pipeline.processing
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
@@ -109,8 +110,9 @@ class DataQualityInspectionPipelineServiceTest {
                 qualityChecker = { _, _ ->
                     listOf(
                         FoundIssue(
+                            suggestedType = QualityIssueType.UNEXPECTED_NULL,
                             inspectionScope = TestScope.FIXTURE_STATUS,
-                            inspectionCode = TestCode.LONG_NULL,
+                            inspectionRuleCode = TestRuleCode.LONG_NULL,
                             severity = InspectionSeverity.CRITICAL,
                             title = "Player ID is null",
                             responseLocation = InspectionResponseLocation("events", "$.response[0].events[32]"),
@@ -128,12 +130,15 @@ class DataQualityInspectionPipelineServiceTest {
 
         pipeline.process(rawEvent())
 
-        assertThat(savedWrite!!.issues.single().suggestedTypeCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
+        assertThat(savedWrite!!.issues.single().suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
+        assertThat(savedWrite!!.issues.single().inspectionRuleCode)
+            .isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
         assertThat(savedWrite!!.inspectionVersion).isEqualTo("V1")
         val issue = savedResult!!.issues.single()
         assertThat(issue.issueInstanceId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(issue.confirmedTypeCode).isNull()
-        assertThat(issue.suggestedTypeCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
+        assertThat(issue.suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
+        assertThat(issue.inspectionRuleCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
         assertThat(issue.checkStatus).isEqualTo(QualityIssueCheckStatus.NEED_CHECK)
         assertThat(issue.responseLocation).isEqualTo(QualityResponseLocation("events", "$.response[0].events[32]"))
         assertThat(issue.evidence?.values).containsEntry("playerId", null)
@@ -160,7 +165,7 @@ class DataQualityInspectionPipelineServiceTest {
             get() = name
     }
 
-    private enum class TestCode : InspectionCode {
+    private enum class TestRuleCode : InspectionRuleCode {
         LONG_NULL,
         ;
 

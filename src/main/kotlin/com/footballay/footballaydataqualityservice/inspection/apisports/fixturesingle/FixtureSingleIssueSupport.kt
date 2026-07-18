@@ -1,15 +1,17 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 internal fun fixtureSingleFoundIssue(
+    suggestedType: QualityIssueType,
     inspectionScope: InspectionScope,
-    inspectionCode: InspectionCode,
+    inspectionRuleCode: InspectionRuleCode,
     severity: InspectionSeverity,
     title: String,
     section: String,
@@ -17,8 +19,9 @@ internal fun fixtureSingleFoundIssue(
     evidence: InspectionEvidence? = null,
 ): FoundIssue =
     FoundIssue(
+        suggestedType = suggestedType,
         inspectionScope = inspectionScope,
-        inspectionCode = inspectionCode,
+        inspectionRuleCode = inspectionRuleCode,
         severity = severity,
         title = title,
         responseLocation = InspectionResponseLocation(section, path),

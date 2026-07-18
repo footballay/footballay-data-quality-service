@@ -1,11 +1,12 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 /** API Sports Fixture Single 최상위 응답 구조를 검사한다. */
 class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
@@ -218,38 +219,40 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
     }
 
     private fun issue(
-        code: InspectionCode,
+        code: Code,
         severity: InspectionSeverity,
         title: String,
         section: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(inspectionScope, code, severity, title, section, path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, section, path, evidence)
 
     private fun hasErrors(errors: com.fasterxml.jackson.databind.JsonNode): Boolean =
         !errors.isContainerNode || errors.size() > 0
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 
-    private enum class Code : InspectionCode {
-        GET_FIELD_NULL,
-        GET_FIELD_BLANK,
-        GET_FIELD_UNEXPECTED,
-        PARAMETERS_NULL,
-        PARAMETER_ID_INVALID,
-        ERRORS_NULL,
-        ERRORS_PRESENT,
-        RESULTS_NULL,
-        RESULTS_NEGATIVE,
-        PAGING_NULL,
-        PAGING_CURRENT_INVALID,
-        PAGING_TOTAL_INVALID,
-        RESPONSE_NULL,
-        RESULTS_RESPONSE_SIZE_MISMATCH,
-        SINGLE_FIXTURE_RESULTS_NOT_ONE,
-        RESPONSE_EMPTY,
-        RESPONSE_MULTIPLE_ITEMS,
-        RESPONSE_ITEM_NULL,
+    private enum class Code(
+        val suggestedType: QualityIssueType,
+    ) : InspectionRuleCode {
+        GET_FIELD_NULL(QualityIssueType.UNEXPECTED_NULL),
+        GET_FIELD_BLANK(QualityIssueType.UNEXPECTED_BLANK),
+        GET_FIELD_UNEXPECTED(QualityIssueType.UNEXPECTED_RESPONSE),
+        PARAMETERS_NULL(QualityIssueType.UNEXPECTED_NULL),
+        PARAMETER_ID_INVALID(QualityIssueType.INVALID_FORMAT),
+        ERRORS_NULL(QualityIssueType.UNEXPECTED_NULL),
+        ERRORS_PRESENT(QualityIssueType.UPSTREAM_ERROR),
+        RESULTS_NULL(QualityIssueType.UNEXPECTED_NULL),
+        RESULTS_NEGATIVE(QualityIssueType.OUT_OF_RANGE),
+        PAGING_NULL(QualityIssueType.UNEXPECTED_NULL),
+        PAGING_CURRENT_INVALID(QualityIssueType.OUT_OF_RANGE),
+        PAGING_TOTAL_INVALID(QualityIssueType.OUT_OF_RANGE),
+        RESPONSE_NULL(QualityIssueType.UNEXPECTED_NULL),
+        RESULTS_RESPONSE_SIZE_MISMATCH(QualityIssueType.INCONSISTENT_INFORMATION),
+        SINGLE_FIXTURE_RESULTS_NOT_ONE(QualityIssueType.UNEXPECTED_RESPONSE),
+        RESPONSE_EMPTY(QualityIssueType.UNEXPECTED_RESPONSE),
+        RESPONSE_MULTIPLE_ITEMS(QualityIssueType.UNEXPECTED_RESPONSE),
+        RESPONSE_ITEM_NULL(QualityIssueType.UNEXPECTED_NULL),
         ;
 
         override val value: String

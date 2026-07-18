@@ -7,10 +7,11 @@ import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
+import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import com.footballay.footballaydataqualityservice.inspection.validateInspectionIdentifier
 import com.footballay.footballaydataqualityservice.logger
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
@@ -62,7 +63,7 @@ class ApiSportsFixtureSingleInspectionProcessor(
                 return listOf(mappingFailed())
             }
 
-        val responseIssues = responseInspectors.flatMap { it.inspect(root) }
+        val responseIssues = collectIssues(responseInspectors, root)
         val requestResponseTarget =
             FixtureSingleRequestResponse(
                 request =
@@ -71,15 +72,33 @@ class ApiSportsFixtureSingleInspectionProcessor(
                     ),
                 response = root,
             )
-        val requestResponseIssues = requestResponseInspectors.flatMap { it.inspect(requestResponseTarget) }
+        val requestResponseIssues = collectIssues(requestResponseInspectors, requestResponseTarget)
 
         return responseIssues + requestResponseIssues
     }
 
+    private fun <T> collectIssues(
+        inspectors: List<QualityInspector<T>>,
+        target: T,
+    ): List<FoundIssue> =
+        inspectors.flatMap { inspector ->
+            val foundIssues = inspector.inspect(target)
+            foundIssues.forEach { foundIssue ->
+                check(foundIssue.inspectionScope.value == inspector.inspectionScope.value) {
+                    "Inspector returned an issue with a mismatched inspection scope. " +
+                        "inspectorScope=${inspector.inspectionScope.value}, " +
+                        "foundIssueScope=${foundIssue.inspectionScope.value}, " +
+                        "inspectionRuleCode=${foundIssue.inspectionRuleCode.value}"
+                }
+            }
+            foundIssues
+        }
+
     private fun rootResponseNull(): FoundIssue =
         FoundIssue(
+            suggestedType = QualityIssueType.UNEXPECTED_NULL,
             inspectionScope = FixtureSingleInspectionScope.RAW_MAPPING,
-            inspectionCode = ProcessorCode.ROOT_NULL,
+            inspectionRuleCode = ProcessorCode.ROOT_NULL,
             severity = InspectionSeverity.CRITICAL,
             title = "Root response is null",
             responseLocation = InspectionResponseLocation("root", "$"),
@@ -87,8 +106,9 @@ class ApiSportsFixtureSingleInspectionProcessor(
 
     private fun mappingFailed(exception: Exception? = null): FoundIssue =
         FoundIssue(
+            suggestedType = QualityIssueType.UPSTREAM_ERROR,
             inspectionScope = FixtureSingleInspectionScope.RAW_MAPPING,
-            inspectionCode = ProcessorCode.MAPPING_FAILED,
+            inspectionRuleCode = ProcessorCode.MAPPING_FAILED,
             severity = InspectionSeverity.CRITICAL,
             title = "Raw JSON cannot be mapped to API Sports Fixture Single DTO",
             responseLocation = InspectionResponseLocation("root", "$"),
@@ -117,7 +137,7 @@ class ApiSportsFixtureSingleInspectionProcessor(
         const val FIXTURE_ID_PARAMETER = "fixtureId"
     }
 
-    private enum class ProcessorCode : InspectionCode {
+    private enum class ProcessorCode : InspectionRuleCode {
         ROOT_NULL,
         MAPPING_FAILED,
         ;

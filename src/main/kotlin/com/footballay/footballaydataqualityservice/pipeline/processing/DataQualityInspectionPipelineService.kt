@@ -77,17 +77,18 @@ class DataQualityInspectionPipelineService(
 
     private fun FoundIssue.toWrite(event: RawCollectedEvent): QualityIssueWrite =
         QualityIssueWrite(
-            suggestedTypeCode = toSuggestedTypeCode(event),
+            suggestedTypeCode = suggestedType,
+            inspectionRuleCode = toInspectionRuleCode(event),
             severity = QualityIssueSeverity.valueOf(severity.name),
             title = title,
             responseLocation = QualityResponseLocation(responseLocation.section, responseLocation.path),
             evidence = evidence?.let { QualityIssueEvidence(it.values) },
         )
 
-    private fun FoundIssue.toSuggestedTypeCode(event: RawCollectedEvent): String {
+    private fun FoundIssue.toInspectionRuleCode(event: RawCollectedEvent): String {
         validateInspectionIdentifier("Inspection scope", inspectionScope.value)
-        validateInspectionIdentifier("Inspection code", inspectionCode.value)
-        return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionScope.value, inspectionCode.value)
+        validateInspectionIdentifier("Inspection rule code", inspectionRuleCode.value)
+        return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionScope.value, inspectionRuleCode.value)
             .joinToString(":")
     }
 

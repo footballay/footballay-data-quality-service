@@ -59,8 +59,8 @@ class DataQualityKafkaFlowIntegrationTest {
 
             val gzipObjectKey = "football-data/raw/compressed-response.data"
             val plainFile = localRawStorageDir.resolve("plain-response.json.gz")
-            writeGzip(localRawStorageDir.resolve(gzipObjectKey), """{"get":"fixtures"}""")
-            Files.writeString(plainFile, """{"get":"leagues"}""")
+            writeGzip(localRawStorageDir.resolve(gzipObjectKey), validFixtureSingleResponse)
+            Files.writeString(plainFile, validFixtureSingleResponse)
 
             val inputs =
                 listOf(
@@ -121,6 +121,27 @@ class DataQualityKafkaFlowIntegrationTest {
 
     private companion object {
         val localRawStorageDir: Path = Files.createTempDirectory("data-quality-local-reader")
+
+        val validFixtureSingleResponse =
+            """
+            {
+              "get":"fixtures",
+              "parameters":{"id":"1582681"},
+              "errors":[],
+              "results":1,
+              "paging":{"current":1,"total":1},
+              "response":[{
+                "fixture":{
+                  "id":1582681,
+                  "timezone":"UTC",
+                  "date":"2026-07-13T00:00:00+00:00",
+                  "timestamp":1783900800,
+                  "periods":{"first":1783900800,"second":1783900800},
+                  "status":{"long":"Not Started","short":"NS"}
+                }
+              }]
+            }
+            """.trimIndent()
 
         @JvmStatic
         @DynamicPropertySource

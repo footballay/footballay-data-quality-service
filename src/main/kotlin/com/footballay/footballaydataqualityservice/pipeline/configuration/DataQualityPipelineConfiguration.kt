@@ -10,7 +10,8 @@ import com.footballay.footballaydataqualityservice.pipeline.idempotency.RawEvent
 import com.footballay.footballaydataqualityservice.pipeline.port.NoopQualityResultStore
 import com.footballay.footballaydataqualityservice.pipeline.port.QualityResultPublisher
 import com.footballay.footballaydataqualityservice.pipeline.port.QualityResultStore
-import com.footballay.footballaydataqualityservice.pipeline.processing.DataQualityPipelineService
+import com.footballay.footballaydataqualityservice.pipeline.processing.DataQualityInspectionPipeline
+import com.footballay.footballaydataqualityservice.pipeline.processing.DataQualityInspectionPipelineService
 import com.footballay.footballaydataqualityservice.pipeline.rawresponse.LocalFileRawResponseReader
 import com.footballay.footballaydataqualityservice.pipeline.rawresponse.MockDataRawResponseReader
 import com.footballay.footballaydataqualityservice.pipeline.rawresponse.NoopRawResponseReader
@@ -75,14 +76,14 @@ class DataQualityPipelineConfiguration {
         )
 
     @Bean
-    fun dataQualityPipelineService(
+    fun dataQualityInspectionPipeline(
         idempotencyChecker: RawEventIdempotencyChecker,
         rawResponseReader: RawResponseReader,
         qualityChecker: QualityChecker,
         resultStore: QualityResultStore,
         resultPublisher: QualityResultPublisher,
-    ): DataQualityPipelineService =
-        DataQualityPipelineService(
+    ): DataQualityInspectionPipeline =
+        DataQualityInspectionPipelineService(
             idempotencyChecker = idempotencyChecker,
             rawResponseReader = rawResponseReader,
             qualityChecker = qualityChecker,

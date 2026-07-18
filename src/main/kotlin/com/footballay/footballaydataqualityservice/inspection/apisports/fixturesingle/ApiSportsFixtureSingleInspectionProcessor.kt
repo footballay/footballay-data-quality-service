@@ -3,14 +3,13 @@ package com.footballay.footballaydataqualityservice.inspection.apisports.fixture
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspectionProcessor
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.logger
-import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 
@@ -30,10 +29,10 @@ class ApiSportsFixtureSingleInspectionProcessor(
     override fun inspect(
         request: QualityCheckRequest,
         rawJson: JsonNode,
-    ): QualityScanResult {
+    ): List<FoundIssue> {
         if (rawJson.isNull) {
             log.warn("API Sports Fixture Single response root is null. provider={}, endpointKey={}", request.provider, request.endpointKey)
-            return result(listOf(rootResponseNull()))
+            return listOf(rootResponseNull())
         }
 
         val root =
@@ -46,14 +45,14 @@ class ApiSportsFixtureSingleInspectionProcessor(
                     request.endpointKey,
                     exception,
                 )
-                return result(listOf(mappingFailed(exception)))
+                return listOf(mappingFailed(exception))
             } ?: run {
                 log.error(
                     "API Sports Fixture Single response mapping returned null. provider={}, endpointKey={}",
                     request.provider,
                     request.endpointKey,
                 )
-                return result(listOf(mappingFailed()))
+                return listOf(mappingFailed())
             }
 
         val responseIssues = responseInspectors.flatMap { it.inspect(root) }
@@ -67,26 +66,20 @@ class ApiSportsFixtureSingleInspectionProcessor(
             )
         val requestResponseIssues = requestResponseInspectors.flatMap { it.inspect(requestResponseTarget) }
 
-        return result(responseIssues + requestResponseIssues)
+        return responseIssues + requestResponseIssues
     }
 
-    private fun result(findings: List<InspectionFinding>): QualityScanResult =
-        QualityScanResult(
-            scannerVersion = SCANNER_VERSION,
-            findings = findings,
-        )
-
-    private fun rootResponseNull(): InspectionFinding =
-        InspectionFinding(
-            suggestedTypeCode = "ROOT_RESPONSE_NULL",
+    private fun rootResponseNull(): FoundIssue =
+        FoundIssue(
+            inspectionCode = ApiSportsFixtureSingleInspectionCodes.ROOT_RESPONSE_NULL,
             severity = InspectionSeverity.CRITICAL,
             title = "Root response is null",
             responseLocation = InspectionResponseLocation("root", "$"),
         )
 
-    private fun mappingFailed(exception: Exception? = null): InspectionFinding =
-        InspectionFinding(
-            suggestedTypeCode = "RAW_JSON_MAPPING_FAILED",
+    private fun mappingFailed(exception: Exception? = null): FoundIssue =
+        FoundIssue(
+            inspectionCode = ApiSportsFixtureSingleInspectionCodes.RAW_JSON_MAPPING_FAILED,
             severity = InspectionSeverity.CRITICAL,
             title = "Raw JSON cannot be mapped to API Sports Fixture Single DTO",
             responseLocation = InspectionResponseLocation("root", "$"),
@@ -100,7 +93,6 @@ class ApiSportsFixtureSingleInspectionProcessor(
         )
 
     private companion object {
-        const val SCANNER_VERSION = "apisports-fixture-single-rules-v1"
         const val FIXTURE_ID_PARAMETER = "fixtureId"
     }
 }

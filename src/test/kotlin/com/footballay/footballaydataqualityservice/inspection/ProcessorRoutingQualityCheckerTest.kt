@@ -1,7 +1,6 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
-import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import org.assertj.core.api.Assertions.assertThat
@@ -21,7 +20,7 @@ class ProcessorRoutingQualityCheckerTest {
                         provider == DataProvider.API_SPORTS && endpointKey == "fixtureSingle"
                     }) {
                         called = true
-                        QualityScanResult("test")
+                        emptyList()
                     },
                 ),
             )
@@ -30,7 +29,7 @@ class ProcessorRoutingQualityCheckerTest {
 
         assertThat(called).isTrue()
         assertThat(supportsCalled).isTrue()
-        assertThat(result.scannerVersion).isEqualTo("test")
+        assertThat(result).isEmpty()
     }
 
     @Test
@@ -47,8 +46,8 @@ class ProcessorRoutingQualityCheckerTest {
         val checker =
             ProcessorRoutingQualityChecker(
                 listOf(
-                    processor(supports = { _, _ -> true }) { QualityScanResult("first") },
-                    processor(supports = { _, _ -> true }) { QualityScanResult("second") },
+                    processor(supports = { _, _ -> true }) { emptyList() },
+                    processor(supports = { _, _ -> true }) { emptyList() },
                 ),
             )
 
@@ -59,7 +58,7 @@ class ProcessorRoutingQualityCheckerTest {
 
     private fun processor(
         supports: (DataProvider, String) -> Boolean,
-        inspect: () -> QualityScanResult,
+        inspect: () -> List<FoundIssue>,
     ): QualityInspectionProcessor =
         object : QualityInspectionProcessor {
             override fun supports(
@@ -70,7 +69,7 @@ class ProcessorRoutingQualityCheckerTest {
             override fun inspect(
                 request: QualityCheckRequest,
                 rawJson: com.fasterxml.jackson.databind.JsonNode,
-            ): QualityScanResult = inspect()
+            ): List<FoundIssue> = inspect()
         }
 
     private fun request() =

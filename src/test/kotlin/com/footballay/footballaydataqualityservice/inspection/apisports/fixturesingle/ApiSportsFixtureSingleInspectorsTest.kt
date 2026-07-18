@@ -27,7 +27,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.suggestedTypeCode })
+        assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
                 "PARAMETER_FIXTURE_ID_INVALID",
                 "ERRORS_PRESENT",
@@ -65,7 +65,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureInspector().inspect(target)
 
-        assertThat(issues.map { it.suggestedTypeCode })
+        assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
                 "FIXTURE_ID_NON_POSITIVE",
                 "FIXTURE_TIMEZONE_BLANK",
@@ -98,7 +98,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val findings = FixtureInspector().inspect(target)
 
-        assertThat(findings.single { it.suggestedTypeCode == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
+        assertThat(findings.single { it.inspectionCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
             .isEqualTo(InspectionSeverity.ERROR)
     }
 
@@ -108,9 +108,9 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.suggestedTypeCode })
+        assertThat(issues.map { it.inspectionCode.value })
             .contains("ERRORS_PRESENT")
-        assertThat(issues.first { it.suggestedTypeCode == "ERRORS_PRESENT" }.evidence).isNull()
+        assertThat(issues.first { it.inspectionCode.value == "ERRORS_PRESENT" }.evidence).isNull()
     }
 
     @Test
@@ -130,7 +130,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureStatusInspector().inspect(target)
 
-        assertThat(issues.map { it.suggestedTypeCode })
+        assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
                 "STATUS_LONG_BLANK",
                 "STATUS_SHORT_NULL",
@@ -154,7 +154,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureSingleRequestResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.suggestedTypeCode })
+        assertThat(issues.map { it.inspectionCode.value })
             .containsExactly("PARAMETER_FIXTURE_ID_MISSING", "FIXTURE_ID_REQUEST_MISMATCH")
     }
 

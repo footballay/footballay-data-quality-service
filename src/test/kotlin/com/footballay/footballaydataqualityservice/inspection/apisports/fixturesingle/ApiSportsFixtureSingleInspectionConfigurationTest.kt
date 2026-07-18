@@ -35,7 +35,7 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                         ),
                 )
 
-            assertThat(result.findings.map { it.suggestedTypeCode })
+            assertThat(result.map { it.inspectionCode.value })
                 .contains("PARAMETER_FIXTURE_ID_MISSING", "FIXTURE_ID_REQUEST_MISMATCH")
         }
     }

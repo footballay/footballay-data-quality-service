@@ -1,8 +1,9 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
+import com.footballay.footballaydataqualityservice.inspection.InspectionCodeGroup
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
@@ -16,6 +17,9 @@ import java.util.zip.GZIPInputStream
 
 class ApiSportsFixtureSingleInspectionProcessorTest {
     private val objectMapper = ObjectMapper()
+    private val testCodeGroup = InspectionCodeGroup("TEST", "FIXTURE_SINGLE")
+    private val testRootIssue = testCodeGroup.define("TEST_ROOT_ISSUE")
+    private val testScalarIssue = testCodeGroup.define("TEST_SCALAR_ISSUE")
 
     @Test
     fun `collects issues from inspectors for the fixture single root DTO`() {
@@ -23,8 +27,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
             QualityInspector<ApiSportsFixtureSingleRootDto> { target ->
                 if (target.get == "fixtures") {
                     listOf(
-                        InspectionFinding(
-                            suggestedTypeCode = "TEST_ROOT_ISSUE",
+                        FoundIssue(
+                            inspectionCode = testRootIssue,
                             severity = InspectionSeverity.INFO,
                             title = "Test root issue",
                             responseLocation = InspectionResponseLocation("root", "\$.get"),
@@ -38,7 +42,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
 
         val result = processor.inspect(request(), objectMapper.readTree("""{"get":"fixtures"}"""))
 
-        assertThat(result.findings.map { it.suggestedTypeCode }).containsExactly("TEST_ROOT_ISSUE")
+        assertThat(result.map { it.inspectionCode }).containsExactly(testRootIssue)
     }
 
     @Test
@@ -48,8 +52,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         val rawJson = objectMapper.readTree("[]")
         val result = processor.inspect(request(), rawJson)
 
-        val issue = result.findings.single()
-        assertThat(issue.suggestedTypeCode).isEqualTo("RAW_JSON_MAPPING_FAILED")
+        val issue = result.single()
+        assertThat(issue.inspectionCode).isEqualTo(ApiSportsFixtureSingleInspectionCodes.RAW_JSON_MAPPING_FAILED)
         assertThat(issue.severity).isEqualTo(InspectionSeverity.CRITICAL)
         assertThat(issue.responseLocation).isEqualTo(InspectionResponseLocation("root", "$"))
         assertThat(issue.evidence?.values).containsKey("exceptionType")
@@ -64,8 +68,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
 
         val result = processor.inspect(request(), rawJson)
 
-        assertThat(result.findings.single().suggestedTypeCode).isEqualTo("ROOT_RESPONSE_NULL")
-        assertThat(result.findings.single().evidence).isNull()
+        assertThat(result.single().inspectionCode).isEqualTo(ApiSportsFixtureSingleInspectionCodes.ROOT_RESPONSE_NULL)
+        assertThat(result.single().evidence).isNull()
         assertThat(invoked).isFalse()
     }
 
@@ -74,8 +78,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         val inspector =
             QualityInspector<ApiSportsFixtureSingleRootDto> {
                 listOf(
-                    InspectionFinding(
-                        suggestedTypeCode = "TEST_SCALAR_ISSUE",
+                    FoundIssue(
+                        inspectionCode = testScalarIssue,
                         severity = InspectionSeverity.WARN,
                         title = "Test scalar issue",
                         responseLocation = InspectionResponseLocation("root", "$.parameters.id"),
@@ -87,7 +91,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
 
         val result = processor.inspect(request(), objectMapper.readTree("""{"parameters":{"id":"ignored"}}"""))
 
-        assertThat(result.findings.single().evidence?.values).containsExactly(entry("actualFixtureId", "invalid"))
+        assertThat(result.single().evidence?.values).containsExactly(entry("actualFixtureId", "invalid"))
     }
 
     @Test
@@ -106,7 +110,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
                 objectMapper.readTree("""{"response":[{"fixture":{"id":654321}}]}"""),
             )
 
-        assertThat(result.findings).isEmpty()
+        assertThat(result).isEmpty()
     }
 
     @Test
@@ -127,7 +131,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
             }
         val result = processor.inspect(request(), rawJson)
 
-        assertThat(result.findings.map { it.suggestedTypeCode }).containsExactly("VENUE_ID_NON_POSITIVE")
+        assertThat(result.map { it.inspectionCode })
+            .containsExactly(ApiSportsFixtureSingleInspectionCodes.VENUE_ID_NON_POSITIVE)
     }
 
     private fun request() =

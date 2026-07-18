@@ -1,15 +1,16 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
+import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 
 /** API Sports Fixture Single fixture status의 기본 무결성을 검사한다. */
 class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
-    override fun inspect(target: ApiSportsFixtureSingleRootDto): List<InspectionFinding> {
+    override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
-        val findings = mutableListOf<InspectionFinding>()
+        val findings = mutableListOf<FoundIssue>()
         root.response.orEmpty().forEachIndexed { index, response ->
             val fixture = response?.fixture ?: return@forEachIndexed
             val path = "$.response[$index].fixture.status"
@@ -17,7 +18,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             if (status == null) {
                 findings +=
                     issue(
-                        "STATUS_OBJECT_NULL",
+                        ApiSportsFixtureSingleInspectionCodes.STATUS_OBJECT_NULL,
                         InspectionSeverity.CRITICAL,
                         "Fixture status is null",
                         path,
@@ -29,7 +30,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
                 status.long == null ->
                     findings +=
                         issue(
-                            "STATUS_LONG_NULL",
+                            ApiSportsFixtureSingleInspectionCodes.STATUS_LONG_NULL,
                             InspectionSeverity.ERROR,
                             "Fixture status long is null",
                             "$path.long",
@@ -38,7 +39,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
                 status.long.isBlank() ->
                     findings +=
                         issue(
-                            "STATUS_LONG_BLANK",
+                            ApiSportsFixtureSingleInspectionCodes.STATUS_LONG_BLANK,
                             InspectionSeverity.ERROR,
                             "Fixture status long is blank",
                             "$path.long",
@@ -49,7 +50,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
                 status.short == null ->
                     findings +=
                         issue(
-                            "STATUS_SHORT_NULL",
+                            ApiSportsFixtureSingleInspectionCodes.STATUS_SHORT_NULL,
                             InspectionSeverity.ERROR,
                             "Fixture status short is null",
                             "$path.short",
@@ -58,7 +59,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
                 status.short.isBlank() ->
                     findings +=
                         issue(
-                            "STATUS_SHORT_BLANK",
+                            ApiSportsFixtureSingleInspectionCodes.STATUS_SHORT_BLANK,
                             InspectionSeverity.ERROR,
                             "Fixture status short is blank",
                             "$path.short",
@@ -68,7 +69,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             if (status.elapsed != null && status.elapsed < 0) {
                 findings +=
                     issue(
-                        "STATUS_ELAPSED_NEGATIVE",
+                        ApiSportsFixtureSingleInspectionCodes.STATUS_ELAPSED_NEGATIVE,
                         InspectionSeverity.WARN,
                         "Fixture status elapsed is negative",
                         "$path.elapsed",
@@ -78,7 +79,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             if (status.extra != null && status.extra < 0) {
                 findings +=
                     issue(
-                        "STATUS_EXTRA_NEGATIVE",
+                        ApiSportsFixtureSingleInspectionCodes.STATUS_EXTRA_NEGATIVE,
                         InspectionSeverity.ERROR,
                         "Fixture status extra is negative",
                         "$path.extra",
@@ -88,7 +89,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             if (status.extra != null && status.elapsed == null) {
                 findings +=
                     issue(
-                        "STATUS_EXTRA_WITHOUT_ELAPSED",
+                        ApiSportsFixtureSingleInspectionCodes.STATUS_EXTRA_WITHOUT_ELAPSED,
                         InspectionSeverity.WARN,
                         "Fixture status extra has no elapsed",
                         "$path.extra",
@@ -100,12 +101,12 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     }
 
     private fun issue(
-        code: String,
+        code: InspectionCode,
         severity: InspectionSeverity,
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): InspectionFinding = fixtureSingleFinding(code, severity, title, "fixture.status", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code, severity, title, "fixture.status", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 }

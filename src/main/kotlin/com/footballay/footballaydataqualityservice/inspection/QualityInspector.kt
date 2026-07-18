@@ -1,12 +1,12 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 fun interface QualityInspector<T> {
-    fun inspect(target: T): List<InspectionFinding>
+    fun inspect(target: T): List<FoundIssue>
 }
 
 /** Inspector가 대상 데이터에서 발견한 품질 문제를 표현한다. */
-data class InspectionFinding(
-    val suggestedTypeCode: String,
+data class FoundIssue(
+    val inspectionCode: InspectionCode,
     val severity: InspectionSeverity,
     val title: String,
     val responseLocation: InspectionResponseLocation,

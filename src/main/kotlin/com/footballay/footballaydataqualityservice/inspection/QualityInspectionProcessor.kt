@@ -1,7 +1,6 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 import com.fasterxml.jackson.databind.JsonNode
-import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 
@@ -14,5 +13,5 @@ interface QualityInspectionProcessor {
     fun inspect(
         request: QualityCheckRequest,
         rawJson: JsonNode,
-    ): QualityScanResult
+    ): List<FoundIssue>
 }

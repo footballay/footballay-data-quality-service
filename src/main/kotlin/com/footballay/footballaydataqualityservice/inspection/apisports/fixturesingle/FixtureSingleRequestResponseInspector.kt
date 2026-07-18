@@ -1,19 +1,19 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 
 /** API Sports Fixture Single 요청과 응답 식별자의 정합성을 검사한다. */
 class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequestResponse> {
-    override fun inspect(target: FixtureSingleRequestResponse): List<InspectionFinding> {
+    override fun inspect(target: FixtureSingleRequestResponse): List<FoundIssue> {
         val requestedFixtureId = target.request.fixtureId ?: return emptyList()
-        val findings = mutableListOf<InspectionFinding>()
+        val findings = mutableListOf<FoundIssue>()
 
         if (target.response.parameters != null && target.response.parameters.id == null) {
             findings +=
-                fixtureSingleFinding(
-                    code = "PARAMETER_FIXTURE_ID_MISSING",
+                fixtureSingleFoundIssue(
+                    inspectionCode = ApiSportsFixtureSingleInspectionCodes.PARAMETER_FIXTURE_ID_MISSING,
                     severity = InspectionSeverity.WARN,
                     title = "Response parameters do not contain fixture ID",
                     section = "root",
@@ -26,8 +26,8 @@ class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequ
             val fixtureId = response?.fixture?.id ?: return@forEachIndexed
             if (fixtureId > 0 && fixtureId != requestedFixtureId) {
                 findings +=
-                    fixtureSingleFinding(
-                        code = "FIXTURE_ID_REQUEST_MISMATCH",
+                    fixtureSingleFoundIssue(
+                        inspectionCode = ApiSportsFixtureSingleInspectionCodes.FIXTURE_ID_REQUEST_MISMATCH,
                         severity = InspectionSeverity.ERROR,
                         title = "Fixture ID does not match request",
                         section = "fixture",

@@ -1,20 +1,21 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
+import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
 
-internal fun fixtureSingleFinding(
-    code: String,
+internal fun fixtureSingleFoundIssue(
+    inspectionCode: InspectionCode,
     severity: InspectionSeverity,
     title: String,
     section: String,
     path: String,
     evidence: InspectionEvidence? = null,
-): InspectionFinding =
-    InspectionFinding(
-        suggestedTypeCode = code,
+): FoundIssue =
+    FoundIssue(
+        inspectionCode = inspectionCode,
         severity = severity,
         title = title,
         responseLocation = InspectionResponseLocation(section, path),

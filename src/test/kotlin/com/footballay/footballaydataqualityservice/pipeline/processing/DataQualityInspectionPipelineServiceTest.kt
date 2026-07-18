@@ -1,11 +1,11 @@
 package com.footballay.footballaydataqualityservice.pipeline.processing
 
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
+import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
-import com.footballay.footballaydataqualityservice.inspection.InspectionFinding
+import com.footballay.footballaydataqualityservice.inspection.InspectionCodeGroup
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.pipeline.QualityScanResult
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
@@ -16,20 +16,23 @@ import com.footballay.footballaydataqualityservice.pipeline.result.QualityIssueC
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityMaxSeverity
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityResponseLocation
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityResult
+import com.footballay.footballaydataqualityservice.pipeline.result.QualityResultWrite
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 
-class DataQualityPipelineServiceTest {
+class DataQualityInspectionPipelineServiceTest {
+    private val testCode = InspectionCodeGroup("TEST", "FIXTURE_SINGLE").define("PLAYER_ID_NULL")
+
     @Test
     fun `processes a new raw event in pipeline order and publishes a no-issue result`() {
         val calls = mutableListOf<String>()
         var published: QualityResult? = null
         var checkedRequest: QualityCheckRequest? = null
         val pipeline =
-            DataQualityPipelineService(
+            DataQualityInspectionPipelineService(
                 idempotencyChecker = {
                     calls += "idempotency"
                     true
@@ -41,11 +44,11 @@ class DataQualityPipelineServiceTest {
                 qualityChecker = { request, _ ->
                     calls += "checker"
                     checkedRequest = request
-                    QualityScanResult("always-happy-v1")
+                    emptyList()
                 },
                 resultStore = {
                     calls += "store"
-                    it
+                    NoopQualityResultStore().save(it)
                 },
                 resultPublisher = {
                     calls += "publisher"
@@ -71,19 +74,20 @@ class DataQualityPipelineServiceTest {
         assertThat(published!!.issueCount).isZero()
         assertThat(published!!.maxSeverity).isEqualTo(QualityMaxSeverity.NONE)
         assertThat(published!!.checkStatus).isEqualTo(QualityCheckStatus.NO_ISSUE)
+        assertThat(published!!.inspectionVersion).isEqualTo("V1")
     }
 
     @Test
     fun `does not continue when idempotency checker rejects the event`() {
         var readCalled = false
         val pipeline =
-            DataQualityPipelineService(
+            DataQualityInspectionPipelineService(
                 idempotencyChecker = { false },
                 rawResponseReader = {
                     readCalled = true
                     JsonNodeFactory.instance.objectNode()
                 },
-                qualityChecker = { _, _ -> QualityScanResult("test") },
+                qualityChecker = { _, _ -> emptyList() },
                 resultStore = NoopQualityResultStore(),
                 resultPublisher = { },
                 clock = Clock.systemUTC(),
@@ -97,36 +101,39 @@ class DataQualityPipelineServiceTest {
     @Test
     fun `materializes inspection findings as reviewable stored issues`() {
         var savedResult: QualityResult? = null
+        var savedWrite: QualityResultWrite? = null
         val checkedAt = Instant.parse("2026-07-13T00:00:00Z")
         val pipeline =
-            DataQualityPipelineService(
+            DataQualityInspectionPipelineService(
                 idempotencyChecker = { true },
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = { _, _ ->
-                    QualityScanResult(
-                        scannerVersion = "test",
-                        findings =
-                            listOf(
-                                InspectionFinding(
-                                    suggestedTypeCode = "PLAYER_ID_NULL",
-                                    severity = InspectionSeverity.CRITICAL,
-                                    title = "Player ID is null",
-                                    responseLocation = InspectionResponseLocation("events", "$.response[0].events[32]"),
-                                    evidence = InspectionEvidence.of("eventType" to "subst", "playerId" to null),
-                                ),
-                            ),
+                    listOf(
+                        FoundIssue(
+                            inspectionCode = testCode,
+                            severity = InspectionSeverity.CRITICAL,
+                            title = "Player ID is null",
+                            responseLocation = InspectionResponseLocation("events", "$.response[0].events[32]"),
+                            evidence = InspectionEvidence.of("eventType" to "subst", "playerId" to null),
+                        ),
                     )
                 },
-                resultStore = { it.also { savedResult = it } },
+                resultStore = { write ->
+                    savedWrite = write
+                    NoopQualityResultStore().save(write).also { result -> savedResult = result }
+                },
                 resultPublisher = { },
                 clock = Clock.fixed(checkedAt, ZoneOffset.UTC),
             )
 
         pipeline.process(rawEvent())
 
+        assertThat(savedWrite!!.issues.single().suggestedTypeCode).isEqualTo("TEST:FIXTURE_SINGLE:PLAYER_ID_NULL")
+        assertThat(savedWrite!!.inspectionVersion).isEqualTo("V1")
         val issue = savedResult!!.issues.single()
         assertThat(issue.issueInstanceId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(issue.confirmedTypeCode).isNull()
+        assertThat(issue.suggestedTypeCode).isEqualTo("TEST:FIXTURE_SINGLE:PLAYER_ID_NULL")
         assertThat(issue.checkStatus).isEqualTo(QualityIssueCheckStatus.NEED_CHECK)
         assertThat(issue.responseLocation).isEqualTo(QualityResponseLocation("events", "$.response[0].events[32]"))
         assertThat(issue.evidence?.values).containsEntry("playerId", null)

@@ -13,7 +13,7 @@ data class QualityResult(
     val canonicalHash: String,
     val rawJsonObjectKey: String,
     val checkedAt: Instant,
-    val scannerVersion: String,
+    val inspectionVersion: String,
     val issues: List<QualityIssue>,
     val hasIssue: Boolean,
     val issueCount: Int,

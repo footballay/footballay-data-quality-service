@@ -1,13 +1,14 @@
 package com.footballay.footballaydataqualityservice.pipeline.processing
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.InspectionCode
+import com.footballay.footballaydataqualityservice.inspection.validateInspectionIdentifier
 import com.footballay.footballaydataqualityservice.logger
 import com.footballay.footballaydataqualityservice.pipeline.QualityChecker
 import com.footballay.footballaydataqualityservice.pipeline.idempotency.RawEventIdempotencyChecker
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityParameter
 import com.footballay.footballaydataqualityservice.pipeline.input.RawCollectedEvent
+import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.port.QualityResultPublisher
 import com.footballay.footballaydataqualityservice.pipeline.port.QualityResultStore
 import com.footballay.footballaydataqualityservice.pipeline.rawresponse.RawResponseReader
@@ -17,6 +18,7 @@ import com.footballay.footballaydataqualityservice.pipeline.result.QualityIssueW
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityResponseLocation
 import com.footballay.footballaydataqualityservice.pipeline.result.QualityResultWrite
 import java.time.Clock
+import java.util.Locale
 
 class DataQualityInspectionPipelineService(
     private val idempotencyChecker: RawEventIdempotencyChecker,
@@ -70,19 +72,31 @@ class DataQualityInspectionPipelineService(
             rawJsonObjectKey = event.rawJsonObjectKey,
             checkedAt = clock.instant(),
             inspectionVersion = INSPECTION_VERSION,
-            issues = foundIssues.map { it.toWrite() },
+            issues = foundIssues.map { it.toWrite(event) },
         )
 
-    private fun FoundIssue.toWrite(): QualityIssueWrite =
+    private fun FoundIssue.toWrite(event: RawCollectedEvent): QualityIssueWrite =
         QualityIssueWrite(
-            suggestedTypeCode = inspectionCode.toSuggestedTypeCode(),
+            suggestedTypeCode = toSuggestedTypeCode(event),
             severity = QualityIssueSeverity.valueOf(severity.name),
             title = title,
             responseLocation = QualityResponseLocation(responseLocation.section, responseLocation.path),
             evidence = evidence?.let { QualityIssueEvidence(it.values) },
         )
 
-    private fun InspectionCode.toSuggestedTypeCode(): String = "$provider:$endpoint:$value"
+    private fun FoundIssue.toSuggestedTypeCode(event: RawCollectedEvent): String {
+        validateInspectionIdentifier("Inspection scope", inspectionScope.value)
+        validateInspectionIdentifier("Inspection code", inspectionCode.value)
+        return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionScope.value, inspectionCode.value)
+            .joinToString(":")
+    }
+
+    private fun DataProvider.toCodeValue(): String = name.replace("_", "")
+
+    private fun String.toCodeValue(): String =
+        replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
+            .replace(Regex("[^A-Za-z0-9]+"), "_")
+            .uppercase(Locale.ROOT)
 
     private companion object {
         const val INSPECTION_VERSION = "V1"

@@ -1,13 +1,16 @@
 package com.footballay.footballaydataqualityservice.inspection.apisports.fixturesingle
 
-import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionCode
+import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
+import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 
 /** API Sports Fixture Single 최상위 응답 구조를 검사한다. */
 class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
+    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.ROOT
+
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
         val findings = mutableListOf<FoundIssue>()
@@ -15,7 +18,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         when {
             root.get == null ->
                 findings += issue(
-                    ApiSportsFixtureSingleInspectionCodes.GET_FIELD_NULL,
+                    Code.GET_FIELD_NULL,
                     InspectionSeverity.WARN,
                     "Response get field is null",
                     "root",
@@ -24,7 +27,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
                 )
             root.get.isBlank() ->
                 findings += issue(
-                    ApiSportsFixtureSingleInspectionCodes.GET_FIELD_BLANK,
+                    Code.GET_FIELD_BLANK,
                     InspectionSeverity.WARN,
                     "Response get field is blank",
                     "root",
@@ -33,7 +36,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
                 )
             root.get != "fixtures" ->
                 findings += issue(
-                    ApiSportsFixtureSingleInspectionCodes.GET_FIELD_UNEXPECTED,
+                    Code.GET_FIELD_UNEXPECTED,
                     InspectionSeverity.ERROR,
                     "Response get field is not fixtures",
                     "root",
@@ -45,7 +48,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         if (root.parameters == null) {
             findings +=
                 issue(
-                        ApiSportsFixtureSingleInspectionCodes.PARAMETERS_NULL,
+                        Code.PARAMETERS_NULL,
                     InspectionSeverity.WARN,
                     "Response parameters are null",
                     "root",
@@ -55,7 +58,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (root.parameters.id != null && root.parameters.id.toLongOrNull() == null) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.PARAMETER_FIXTURE_ID_INVALID,
+                        Code.PARAMETER_ID_INVALID,
                         InspectionSeverity.WARN,
                         "Response fixture ID parameter is invalid",
                         "root",
@@ -69,7 +72,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             root.errors == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.ERRORS_NULL,
+                        Code.ERRORS_NULL,
                         InspectionSeverity.WARN,
                         "Response errors are null",
                         "root",
@@ -78,7 +81,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             hasErrors(root.errors) ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.ERRORS_PRESENT,
+                        Code.ERRORS_PRESENT,
                         InspectionSeverity.ERROR,
                         "Response contains errors",
                         "root",
@@ -90,7 +93,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             root.results == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESULTS_NULL,
+                        Code.RESULTS_NULL,
                         InspectionSeverity.ERROR,
                         "Response results are null",
                         "root",
@@ -99,7 +102,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             root.results < 0 ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESULTS_NEGATIVE,
+                        Code.RESULTS_NEGATIVE,
                         InspectionSeverity.ERROR,
                         "Response results are negative",
                         "root",
@@ -112,7 +115,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         if (paging == null) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.PAGING_NULL,
+                    Code.PAGING_NULL,
                     InspectionSeverity.INFO,
                     "Response paging is null",
                     "root",
@@ -122,7 +125,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (paging.current != null && paging.current < 1) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.PAGING_CURRENT_INVALID,
+                        Code.PAGING_CURRENT_INVALID,
                         InspectionSeverity.WARN,
                         "Response paging current is invalid",
                         "root",
@@ -133,7 +136,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (paging.total != null && paging.total < 1) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.PAGING_TOTAL_INVALID,
+                        Code.PAGING_TOTAL_INVALID,
                         InspectionSeverity.WARN,
                         "Response paging total is invalid",
                         "root",
@@ -147,7 +150,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         if (response == null) {
             findings +=
                 issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESPONSE_NULL,
+                        Code.RESPONSE_NULL,
                     InspectionSeverity.CRITICAL,
                     "Response array is null",
                     "root",
@@ -157,7 +160,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (root.results != null && root.results != response.size) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESULTS_RESPONSE_SIZE_MISMATCH,
+                        Code.RESULTS_RESPONSE_SIZE_MISMATCH,
                         InspectionSeverity.ERROR,
                         "Response results do not match response size",
                         "root",
@@ -168,7 +171,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (root.results != null && root.results != 1) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.SINGLE_FIXTURE_RESULTS_NOT_ONE,
+                        Code.SINGLE_FIXTURE_RESULTS_NOT_ONE,
                         InspectionSeverity.ERROR,
                         "Single fixture response results are not one",
                         "root",
@@ -179,7 +182,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (response.isEmpty()) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESPONSE_EMPTY,
+                        Code.RESPONSE_EMPTY,
                         InspectionSeverity.ERROR,
                         "Single fixture response is empty",
                         "root",
@@ -189,7 +192,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
             if (response.size > 1) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.RESPONSE_MULTIPLE_ITEMS,
+                        Code.RESPONSE_MULTIPLE_ITEMS,
                         InspectionSeverity.ERROR,
                         "Single fixture response has multiple items",
                         "root",
@@ -200,7 +203,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
                 if (item == null) {
                     findings +=
                         issue(
-                            ApiSportsFixtureSingleInspectionCodes.RESPONSE_ITEM_NULL,
+                            Code.RESPONSE_ITEM_NULL,
                             InspectionSeverity.CRITICAL,
                             "Response item is null",
                             "root",
@@ -221,10 +224,35 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         section: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(code, severity, title, section, path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(inspectionScope, code, severity, title, section, path, evidence)
 
     private fun hasErrors(errors: com.fasterxml.jackson.databind.JsonNode): Boolean =
         !errors.isContainerNode || errors.size() > 0
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
+
+    private enum class Code : InspectionCode {
+        GET_FIELD_NULL,
+        GET_FIELD_BLANK,
+        GET_FIELD_UNEXPECTED,
+        PARAMETERS_NULL,
+        PARAMETER_ID_INVALID,
+        ERRORS_NULL,
+        ERRORS_PRESENT,
+        RESULTS_NULL,
+        RESULTS_NEGATIVE,
+        PAGING_NULL,
+        PAGING_CURRENT_INVALID,
+        PAGING_TOTAL_INVALID,
+        RESPONSE_NULL,
+        RESULTS_RESPONSE_SIZE_MISMATCH,
+        SINGLE_FIXTURE_RESULTS_NOT_ONE,
+        RESPONSE_EMPTY,
+        RESPONSE_MULTIPLE_ITEMS,
+        RESPONSE_ITEM_NULL,
+        ;
+
+        override val value: String
+            get() = name
+    }
 }

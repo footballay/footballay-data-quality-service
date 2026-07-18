@@ -5,8 +5,10 @@ import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
+import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 
 internal fun fixtureSingleFoundIssue(
+    inspectionScope: InspectionScope,
     inspectionCode: InspectionCode,
     severity: InspectionSeverity,
     title: String,
@@ -15,6 +17,7 @@ internal fun fixtureSingleFoundIssue(
     evidence: InspectionEvidence? = null,
 ): FoundIssue =
     FoundIssue(
+        inspectionScope = inspectionScope,
         inspectionCode = inspectionCode,
         severity = severity,
         title = title,

@@ -4,11 +4,14 @@ import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
+import com.footballay.footballaydataqualityservice.inspection.InspectionScope
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import java.time.OffsetDateTime
 
 /** API Sports Fixture Single fixture 기본 정보와 시간 정보를 검사한다. */
 class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
+    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.FIXTURE
+
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
         val findings = mutableListOf<FoundIssue>()
@@ -20,7 +23,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             if (fixture == null) {
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_OBJECT_NULL,
+                        Code.OBJECT_NULL,
                         InspectionSeverity.CRITICAL,
                         "Fixture object is null",
                         fixturePath,
@@ -45,7 +48,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.id == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_ID_NULL,
+                        Code.ID_NULL,
                         InspectionSeverity.CRITICAL,
                         "Fixture ID is null",
                         "$fixturePath.id",
@@ -54,7 +57,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.id <= 0 ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_ID_NON_POSITIVE,
+                        Code.ID_NON_POSITIVE,
                         InspectionSeverity.ERROR,
                         "Fixture ID is not positive",
                         "$fixturePath.id",
@@ -72,7 +75,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.timezone == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_TIMEZONE_NULL,
+                        Code.TIMEZONE_NULL,
                         InspectionSeverity.WARN,
                         "Fixture timezone is null",
                         "$fixturePath.timezone",
@@ -81,7 +84,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.timezone.isBlank() ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_TIMEZONE_BLANK,
+                        Code.TIMEZONE_BLANK,
                         InspectionSeverity.WARN,
                         "Fixture timezone is blank",
                         "$fixturePath.timezone",
@@ -94,7 +97,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.date == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_DATE_NULL,
+                        Code.DATE_NULL,
                         InspectionSeverity.ERROR,
                         "Fixture date is null",
                         "$fixturePath.date",
@@ -103,7 +106,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             kickoff == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_DATE_INVALID_FORMAT,
+                        Code.DATE_INVALID_FORMAT,
                         InspectionSeverity.ERROR,
                         "Fixture date format is invalid",
                         "$fixturePath.date",
@@ -114,7 +117,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.timestamp == null ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_TIMESTAMP_NULL,
+                        Code.TIMESTAMP_NULL,
                         InspectionSeverity.ERROR,
                         "Fixture timestamp is null",
                         "$fixturePath.timestamp",
@@ -123,7 +126,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             fixture.timestamp <= 0 ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_TIMESTAMP_NON_POSITIVE,
+                        Code.TIMESTAMP_NON_POSITIVE,
                         InspectionSeverity.ERROR,
                         "Fixture timestamp is not positive",
                         "$fixturePath.timestamp",
@@ -132,7 +135,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             kickoff != null && kickoff != fixture.timestamp ->
                 findings +=
                     issue(
-                        ApiSportsFixtureSingleInspectionCodes.FIXTURE_DATE_TIMESTAMP_MISMATCH,
+                        Code.DATE_TIMESTAMP_MISMATCH,
                         InspectionSeverity.ERROR,
                         "Fixture date and timestamp do not match",
                         fixturePath,
@@ -147,7 +150,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         val periods = fixture.periods ?: run {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.PERIODS_NULL,
+                    Code.PERIODS_NULL,
                     InspectionSeverity.WARN,
                     "Fixture periods are null",
                     "$fixturePath.periods",
@@ -158,7 +161,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (periods.first != null && periods.first <= 0) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.FIRST_PERIOD_TIMESTAMP_INVALID,
+                    Code.FIRST_PERIOD_TIMESTAMP_INVALID,
                     InspectionSeverity.WARN,
                     "First period timestamp is invalid",
                     "$fixturePath.periods.first",
@@ -168,7 +171,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (periods.second != null && periods.second <= 0) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.SECOND_PERIOD_TIMESTAMP_INVALID,
+                    Code.SECOND_PERIOD_TIMESTAMP_INVALID,
                     InspectionSeverity.WARN,
                     "Second period timestamp is invalid",
                     "$fixturePath.periods.second",
@@ -178,7 +181,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (periods.first != null && periods.second != null && periods.second < periods.first) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.SECOND_PERIOD_BEFORE_FIRST,
+                    Code.SECOND_PERIOD_BEFORE_FIRST,
                     InspectionSeverity.ERROR,
                     "Second period is before first period",
                     "$fixturePath.periods.second",
@@ -191,7 +194,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (kickoff != null && periods.first != null && periods.first < kickoff) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.FIRST_PERIOD_BEFORE_KICKOFF,
+                    Code.FIRST_PERIOD_BEFORE_KICKOFF,
                     InspectionSeverity.WARN,
                     "First period is before kickoff",
                     "$fixturePath.periods.first",
@@ -204,7 +207,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (kickoff != null && periods.second != null && periods.second < kickoff) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.SECOND_PERIOD_BEFORE_KICKOFF,
+                    Code.SECOND_PERIOD_BEFORE_KICKOFF,
                     InspectionSeverity.ERROR,
                     "Second period is before kickoff",
                     "$fixturePath.periods.second",
@@ -224,7 +227,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (fixture.referee?.isBlank() == true) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.REFEREE_BLANK,
+                    Code.REFEREE_BLANK,
                     InspectionSeverity.INFO,
                     "Fixture referee is blank",
                     "$fixturePath.referee",
@@ -235,7 +238,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (venue.id != null && venue.id <= 0) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.VENUE_ID_NON_POSITIVE,
+                    Code.VENUE_ID_NON_POSITIVE,
                     InspectionSeverity.WARN,
                     "Venue ID is not positive",
                     "$fixturePath.venue.id",
@@ -245,7 +248,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (venue.name?.isBlank() == true) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.VENUE_NAME_BLANK,
+                    Code.VENUE_NAME_BLANK,
                     InspectionSeverity.WARN,
                     "Venue name is blank",
                     "$fixturePath.venue.name",
@@ -255,7 +258,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         if (venue.city?.isBlank() == true) {
             findings +=
                 issue(
-                    ApiSportsFixtureSingleInspectionCodes.VENUE_CITY_BLANK,
+                    Code.VENUE_CITY_BLANK,
                     InspectionSeverity.INFO,
                     "Venue city is blank",
                     "$fixturePath.venue.city",
@@ -270,7 +273,34 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(code, severity, title, "fixture", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(inspectionScope, code, severity, title, "fixture", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
+
+    private enum class Code : InspectionCode {
+        OBJECT_NULL,
+        ID_NULL,
+        ID_NON_POSITIVE,
+        TIMEZONE_NULL,
+        TIMEZONE_BLANK,
+        DATE_NULL,
+        DATE_INVALID_FORMAT,
+        TIMESTAMP_NULL,
+        TIMESTAMP_NON_POSITIVE,
+        DATE_TIMESTAMP_MISMATCH,
+        PERIODS_NULL,
+        FIRST_PERIOD_TIMESTAMP_INVALID,
+        SECOND_PERIOD_TIMESTAMP_INVALID,
+        SECOND_PERIOD_BEFORE_FIRST,
+        FIRST_PERIOD_BEFORE_KICKOFF,
+        SECOND_PERIOD_BEFORE_KICKOFF,
+        REFEREE_BLANK,
+        VENUE_ID_NON_POSITIVE,
+        VENUE_NAME_BLANK,
+        VENUE_CITY_BLANK,
+        ;
+
+        override val value: String
+            get() = name
+    }
 }

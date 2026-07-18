@@ -27,9 +27,10 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
+        assertThat(issues.map { it.inspectionScope.value }).containsOnly("ROOT")
         assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
-                "PARAMETER_FIXTURE_ID_INVALID",
+                "PARAMETER_ID_INVALID",
                 "ERRORS_PRESENT",
                 "PAGING_CURRENT_INVALID",
                 "PAGING_TOTAL_INVALID",
@@ -65,12 +66,13 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureInspector().inspect(target)
 
+        assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE")
         assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
-                "FIXTURE_ID_NON_POSITIVE",
-                "FIXTURE_TIMEZONE_BLANK",
-                "FIXTURE_DATE_INVALID_FORMAT",
-                "FIXTURE_TIMESTAMP_NON_POSITIVE",
+                "ID_NON_POSITIVE",
+                "TIMEZONE_BLANK",
+                "DATE_INVALID_FORMAT",
+                "TIMESTAMP_NON_POSITIVE",
                 "SECOND_PERIOD_BEFORE_FIRST",
                 "REFEREE_BLANK",
                 "VENUE_ID_NON_POSITIVE",
@@ -98,6 +100,8 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val findings = FixtureInspector().inspect(target)
 
+        assertThat(findings.single { it.inspectionCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.inspectionScope.value)
+            .isEqualTo("FIXTURE")
         assertThat(findings.single { it.inspectionCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
             .isEqualTo(InspectionSeverity.ERROR)
     }
@@ -130,12 +134,13 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureStatusInspector().inspect(target)
 
+        assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE_STATUS")
         assertThat(issues.map { it.inspectionCode.value })
             .containsExactly(
-                "STATUS_LONG_BLANK",
-                "STATUS_SHORT_NULL",
-                "STATUS_ELAPSED_NEGATIVE",
-                "STATUS_EXTRA_NEGATIVE",
+                "LONG_BLANK",
+                "SHORT_NULL",
+                "ELAPSED_NEGATIVE",
+                "EXTRA_NEGATIVE",
             )
     }
 
@@ -154,8 +159,9 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureSingleRequestResponseInspector().inspect(target)
 
+        assertThat(issues.map { it.inspectionScope.value }).containsOnly("REQUEST_RESPONSE")
         assertThat(issues.map { it.inspectionCode.value })
-            .containsExactly("PARAMETER_FIXTURE_ID_MISSING", "FIXTURE_ID_REQUEST_MISMATCH")
+            .containsExactly("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH")
     }
 
     @Test

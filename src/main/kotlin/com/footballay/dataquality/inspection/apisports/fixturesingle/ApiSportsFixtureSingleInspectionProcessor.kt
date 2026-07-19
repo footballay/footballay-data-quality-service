@@ -27,6 +27,9 @@ class ApiSportsFixtureSingleInspectionProcessor(
 
     override fun inspectors(): List<QualityInspector<*>> = responseInspectors + requestResponseInspectors
 
+    override fun inspectionNames(): List<InspectionName> =
+        super<QualityInspectionProcessor>.inspectionNames() + rawMappingInspectionName
+
     override fun supports(
         provider: DataProvider,
         endpointKey: String,

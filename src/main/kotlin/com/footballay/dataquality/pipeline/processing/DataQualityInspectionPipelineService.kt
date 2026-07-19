@@ -1,6 +1,7 @@
 package com.footballay.dataquality.pipeline.processing
 
 import com.footballay.dataquality.inspection.FoundIssue
+import com.footballay.dataquality.inspection.validateInspectionRuleCode
 import com.footballay.dataquality.logger
 import com.footballay.dataquality.pipeline.QualityChecker
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
@@ -77,14 +78,15 @@ class DataQualityInspectionPipelineService(
     private fun FoundIssue.toWrite(event: RawCollectedEvent): QualityIssueWrite =
         QualityIssueWrite(
             suggestedTypeCode = suggestedType,
-            inspectionRuleCode = toInspectionRuleCode(event),
+            inspectionCode = toInspectionCode(event),
             severity = QualityIssueSeverity.valueOf(severity.name),
             title = title,
             responseLocation = QualityResponseLocation(responseLocation.section, responseLocation.path),
             evidence = evidence?.let { QualityIssueEvidence(it.values) },
         )
 
-    private fun FoundIssue.toInspectionRuleCode(event: RawCollectedEvent): String {
+    private fun FoundIssue.toInspectionCode(event: RawCollectedEvent): String {
+        validateInspectionRuleCode(inspectionRuleCode.value)
         return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionName.value, inspectionRuleCode.value)
             .joinToString(":")
     }

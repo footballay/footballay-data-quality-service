@@ -18,13 +18,30 @@ class InspectionProcessorInspectorValidatorTest {
 
         assertThatIllegalStateException()
             .isThrownBy { InspectionProcessorInspectorValidator(listOf(processor)).afterSingletonsInstantiated() }
-            .withMessage("Duplicated inspector names for processor=${TestProcessor::class.java.name}: FIXTURE")
+            .withMessage("Duplicated inspection names for processor=${TestProcessor::class.java.name}: FIXTURE")
+    }
+
+    @Test
+    fun `rejects an inspector name duplicated by a processor inspection name`() {
+        val processor =
+            TestProcessor(
+                usedInspectors = listOf(TestInspector(InspectionName.of("RAW_MAPPING"))),
+                processorInspectionNames = listOf(InspectionName.of("RAW_MAPPING")),
+            )
+
+        assertThatIllegalStateException()
+            .isThrownBy { InspectionProcessorInspectorValidator(listOf(processor)).afterSingletonsInstantiated() }
+            .withMessage("Duplicated inspection names for processor=${TestProcessor::class.java.name}: RAW_MAPPING")
     }
 
     private class TestProcessor(
         private val usedInspectors: List<QualityInspector<*>>,
+        private val processorInspectionNames: List<InspectionName> = emptyList(),
     ) : QualityInspectionProcessor {
         override fun inspectors(): List<QualityInspector<*>> = usedInspectors
+
+        override fun inspectionNames(): List<InspectionName> =
+            super<QualityInspectionProcessor>.inspectionNames() + processorInspectionNames
 
         override fun supports(
             provider: DataProvider,

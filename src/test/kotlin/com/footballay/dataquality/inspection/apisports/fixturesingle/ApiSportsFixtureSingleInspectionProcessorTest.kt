@@ -2,11 +2,11 @@ package com.footballay.dataquality.inspection.apisports.fixturesingle
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.dataquality.inspection.FoundIssue
-import com.footballay.dataquality.inspection.InspectionRuleCode
 import com.footballay.dataquality.inspection.InspectionEvidence
-import com.footballay.dataquality.inspection.InspectionResponseLocation
-import com.footballay.dataquality.inspection.InspectionSeverity
 import com.footballay.dataquality.inspection.InspectionName
+import com.footballay.dataquality.inspection.InspectionResponseLocation
+import com.footballay.dataquality.inspection.InspectionRuleCode
+import com.footballay.dataquality.inspection.InspectionSeverity
 import com.footballay.dataquality.inspection.QualityInspector
 import com.footballay.dataquality.inspection.QualityIssueType
 import com.footballay.dataquality.pipeline.input.DataProvider
@@ -20,6 +20,13 @@ import java.util.zip.GZIPInputStream
 
 class ApiSportsFixtureSingleInspectionProcessorTest {
     private val objectMapper = ObjectMapper()
+
+    @Test
+    fun `exposes raw mapping as a processor inspection name`() {
+        val processor = ApiSportsFixtureSingleInspectionProcessor(objectMapper, emptyList(), emptyList())
+
+        assertThat(processor.inspectionNames()).containsExactly(InspectionName.of("RAW_MAPPING"))
+    }
 
     @Test
     fun `collects issues from inspectors for the fixture single root DTO`() {
@@ -48,7 +55,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     }
 
     @Test
-    fun `rejects an issue whose scope differs from its inspector scope`() {
+    fun `rejects an issue whose inspection name differs from its inspector name`() {
         val inspector =
             TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) {
                 listOf(
@@ -57,7 +64,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
                         inspectionName = InspectionName.of("FIXTURE"),
                         inspectionRuleCode = TestRuleCode.ROOT_ISSUE,
                         severity = InspectionSeverity.ERROR,
-                        title = "Mismatched scope issue",
+                        title = "Mismatched inspection name issue",
                         responseLocation = InspectionResponseLocation("root", "$.get"),
                     ),
                 )
@@ -91,7 +98,11 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     @Test
     fun `returns a critical issue for a null root response without invoking inspectors`() {
         var invoked = false
-        val inspector = TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) { invoked = true; emptyList() }
+        val inspector =
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) {
+                invoked = true
+                emptyList()
+            }
         val processor = ApiSportsFixtureSingleInspectionProcessor(objectMapper, listOf(inspector), emptyList())
         val rawJson = objectMapper.readTree("null")
 
@@ -190,5 +201,4 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         override val value: String
             get() = name
     }
-
 }

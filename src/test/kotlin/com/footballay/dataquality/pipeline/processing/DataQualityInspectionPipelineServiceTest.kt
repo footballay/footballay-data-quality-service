@@ -20,6 +20,7 @@ import com.footballay.dataquality.pipeline.result.QualityResponseLocation
 import com.footballay.dataquality.pipeline.result.QualityResult
 import com.footballay.dataquality.pipeline.result.QualityResultWrite
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test
 import java.time.Clock
 import java.time.Instant
@@ -131,19 +132,47 @@ class DataQualityInspectionPipelineServiceTest {
         pipeline.process(rawEvent())
 
         assertThat(savedWrite!!.issues.single().suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
-        assertThat(savedWrite!!.issues.single().inspectionRuleCode)
+        assertThat(savedWrite!!.issues.single().inspectionCode)
             .isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
         assertThat(savedWrite!!.inspectionVersion).isEqualTo("V1")
         val issue = savedResult!!.issues.single()
         assertThat(issue.issueInstanceId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(issue.confirmedTypeCode).isNull()
         assertThat(issue.suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
-        assertThat(issue.inspectionRuleCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
+        assertThat(issue.inspectionCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
         assertThat(issue.checkStatus).isEqualTo(QualityIssueCheckStatus.NEED_CHECK)
         assertThat(issue.responseLocation).isEqualTo(QualityResponseLocation("events", "$.response[0].events[32]"))
         assertThat(issue.evidence?.values).containsEntry("playerId", null)
         assertThat(issue.createdAt).isEqualTo(checkedAt)
         assertThat(issue.updatedAt).isEqualTo(checkedAt)
+    }
+
+    @Test
+    fun `rejects an inspection rule code outside uppercase snake case`() {
+        val pipeline =
+            DataQualityInspectionPipelineService(
+                idempotencyChecker = { true },
+                rawResponseReader = { JsonNodeFactory.instance.objectNode() },
+                qualityChecker = { _, _ ->
+                    listOf(
+                        FoundIssue(
+                            suggestedType = QualityIssueType.INVALID_FORMAT,
+                            inspectionName = InspectionName.of("FIXTURE_STATUS"),
+                            inspectionRuleCode = InvalidRuleCode,
+                            severity = InspectionSeverity.ERROR,
+                            title = "Invalid rule code",
+                            responseLocation = InspectionResponseLocation("fixture", "$.response[0]"),
+                        ),
+                    )
+                },
+                resultStore = NoopQualityResultStore(),
+                resultPublisher = { },
+                clock = Clock.systemUTC(),
+            )
+
+        assertThatIllegalArgumentException()
+            .isThrownBy { pipeline.process(rawEvent()) }
+            .withMessage("Inspection rule code must use uppercase snake case: long-null")
     }
 
     private fun rawEvent() =
@@ -163,5 +192,9 @@ class DataQualityInspectionPipelineServiceTest {
 
         override val value: String
             get() = name
+    }
+
+    private object InvalidRuleCode : InspectionRuleCode {
+        override val value: String = "long-null"
     }
 }

@@ -31,7 +31,7 @@ class NoopQualityResultStoreTest {
         assertThat(result.issues.map { it.issueInstanceId }).doesNotHaveDuplicates()
         assertThat(result.issues).allSatisfy { issue ->
             assertThat(issue.suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
-            assertThat(issue.inspectionRuleCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL")
+            assertThat(issue.inspectionCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL")
             assertThat(issue.confirmedTypeCode).isNull()
             assertThat(issue.checkStatus).isEqualTo(QualityIssueCheckStatus.NEED_CHECK)
             assertThat(issue.createdAt).isEqualTo(checkedAt)
@@ -55,12 +55,12 @@ class NoopQualityResultStoreTest {
     }
 
     private fun issue(
-        inspectionRuleCode: String,
+        inspectionCode: String,
         severity: QualityIssueSeverity,
     ) =
         QualityIssueWrite(
             suggestedTypeCode = QualityIssueType.UNEXPECTED_NULL,
-            inspectionRuleCode = inspectionRuleCode,
+            inspectionCode = inspectionCode,
             severity = severity,
             title = "Player ID is null",
             responseLocation = QualityResponseLocation("players", "$.response[0].player.id"),

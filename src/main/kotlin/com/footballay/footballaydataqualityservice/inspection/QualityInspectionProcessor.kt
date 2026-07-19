@@ -5,6 +5,8 @@ import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
 
 interface QualityInspectionProcessor {
+    fun inspectors(): List<QualityInspector<*>>
+
     fun supports(
         provider: DataProvider,
         endpointKey: String,

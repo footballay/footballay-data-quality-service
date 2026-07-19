@@ -4,13 +4,13 @@ import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 /** API Sports Fixture Single fixture status의 기본 무결성을 검사한다. */
 class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
-    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.FIXTURE_STATUS
+    override val inspectionName = InspectionName.of("FIXTURE_STATUS")
 
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
@@ -110,7 +110,7 @@ class FixtureStatusInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, "fixture.status", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionName, code, severity, title, "fixture.status", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 

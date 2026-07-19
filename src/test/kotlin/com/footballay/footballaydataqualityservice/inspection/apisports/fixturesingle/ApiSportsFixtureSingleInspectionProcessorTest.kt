@@ -6,7 +6,7 @@ import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
@@ -24,12 +24,12 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     @Test
     fun `collects issues from inspectors for the fixture single root DTO`() {
         val inspector =
-            TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) { target ->
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) { target ->
                 if (target.get == "fixtures") {
                     listOf(
                         FoundIssue(
                             suggestedType = QualityIssueType.UNEXPECTED_RESPONSE,
-                            inspectionScope = TestScope.TEST_ROOT,
+                            inspectionName = InspectionName.of("ROOT"),
                             inspectionRuleCode = TestRuleCode.ROOT_ISSUE,
                             severity = InspectionSeverity.INFO,
                             title = "Test root issue",
@@ -50,11 +50,11 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     @Test
     fun `rejects an issue whose scope differs from its inspector scope`() {
         val inspector =
-            TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) {
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) {
                 listOf(
                     FoundIssue(
                         suggestedType = QualityIssueType.UNEXPECTED_RESPONSE,
-                        inspectionScope = TestScope.TEST_SCALAR,
+                        inspectionName = InspectionName.of("FIXTURE"),
                         inspectionRuleCode = TestRuleCode.ROOT_ISSUE,
                         severity = InspectionSeverity.ERROR,
                         title = "Mismatched scope issue",
@@ -67,8 +67,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         assertThatIllegalStateException()
             .isThrownBy { processor.inspect(request(), objectMapper.readTree("""{"get":"fixtures"}""")) }
             .withMessage(
-                "Inspector returned an issue with a mismatched inspection scope. " +
-                    "inspectorScope=TEST_ROOT, foundIssueScope=TEST_SCALAR, inspectionRuleCode=ROOT_ISSUE",
+                "Inspector returned an issue with a mismatched inspection name. " +
+                    "inspectorName=ROOT, foundIssueName=FIXTURE, inspectionRuleCode=ROOT_ISSUE",
             )
     }
 
@@ -80,7 +80,7 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         val result = processor.inspect(request(), rawJson)
 
         val issue = result.single()
-        assertThat(issue.inspectionScope).isEqualTo(FixtureSingleInspectionScope.RAW_MAPPING)
+        assertThat(issue.inspectionName).isEqualTo(InspectionName.of("RAW_MAPPING"))
         assertThat(issue.inspectionRuleCode.value).isEqualTo("MAPPING_FAILED")
         assertThat(issue.suggestedType).isEqualTo(QualityIssueType.UPSTREAM_ERROR)
         assertThat(issue.severity).isEqualTo(InspectionSeverity.CRITICAL)
@@ -91,13 +91,13 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     @Test
     fun `returns a critical issue for a null root response without invoking inspectors`() {
         var invoked = false
-        val inspector = TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) { invoked = true; emptyList() }
+        val inspector = TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("ROOT")) { invoked = true; emptyList() }
         val processor = ApiSportsFixtureSingleInspectionProcessor(objectMapper, listOf(inspector), emptyList())
         val rawJson = objectMapper.readTree("null")
 
         val result = processor.inspect(request(), rawJson)
 
-        assertThat(result.single().inspectionScope).isEqualTo(FixtureSingleInspectionScope.RAW_MAPPING)
+        assertThat(result.single().inspectionName).isEqualTo(InspectionName.of("RAW_MAPPING"))
         assertThat(result.single().inspectionRuleCode.value).isEqualTo("ROOT_NULL")
         assertThat(result.single().suggestedType).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
         assertThat(result.single().evidence).isNull()
@@ -107,11 +107,11 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     @Test
     fun `preserves scalar evidence supplied by an inspector`() {
         val inspector =
-            TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_SCALAR) {
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("FIXTURE")) {
                 listOf(
                     FoundIssue(
                         suggestedType = QualityIssueType.INVALID_FORMAT,
-                        inspectionScope = TestScope.TEST_SCALAR,
+                        inspectionName = InspectionName.of("FIXTURE"),
                         inspectionRuleCode = TestRuleCode.SCALAR_ISSUE,
                         severity = InspectionSeverity.WARN,
                         title = "Test scalar issue",
@@ -164,28 +164,8 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
             }
         val result = processor.inspect(request(), rawJson)
 
-        assertThat(result.map { it.inspectionScope.value to it.inspectionRuleCode.value })
+        assertThat(result.map { it.inspectionName.value to it.inspectionRuleCode.value })
             .containsExactly("FIXTURE" to "VENUE_ID_NON_POSITIVE")
-    }
-
-    @Test
-    fun `rejects duplicated inspection scopes during processor initialization`() {
-        val first = TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) { emptyList() }
-        val second = TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) { emptyList() }
-
-        assertThatIllegalStateException()
-            .isThrownBy { ApiSportsFixtureSingleInspectionProcessor(objectMapper, listOf(first, second), emptyList()) }
-            .withMessage("Duplicated inspection scopes for APISPORTS:FIXTURE_SINGLE: TEST_ROOT")
-    }
-
-    @Test
-    fun `allows different inspection scopes during processor initialization`() {
-        val responseInspector = TestInspector<ApiSportsFixtureSingleRootDto>(TestScope.TEST_ROOT) { emptyList() }
-        val requestInspector = TestInspector<FixtureSingleRequestResponse>(TestScope.TEST_SCALAR) { emptyList() }
-
-        val processor = ApiSportsFixtureSingleInspectionProcessor(objectMapper, listOf(responseInspector), listOf(requestInspector))
-
-        assertThat(processor).isNotNull
     }
 
     private fun request() =
@@ -196,19 +176,10 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
         )
 
     private class TestInspector<T>(
-        override val inspectionScope: InspectionScope,
+        override val inspectionName: InspectionName,
         private val inspectBlock: (T) -> List<FoundIssue>,
     ) : QualityInspector<T> {
         override fun inspect(target: T): List<FoundIssue> = inspectBlock(target)
-    }
-
-    private enum class TestScope : InspectionScope {
-        TEST_ROOT,
-        TEST_SCALAR,
-        ;
-
-        override val value: String
-            get() = name
     }
 
     private enum class TestRuleCode : InspectionRuleCode {

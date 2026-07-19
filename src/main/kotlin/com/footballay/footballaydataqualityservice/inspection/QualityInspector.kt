@@ -1,7 +1,7 @@
 package com.footballay.footballaydataqualityservice.inspection
 
 interface QualityInspector<T> {
-    val inspectionScope: InspectionScope
+    val inspectionName: InspectionName
 
     fun inspect(target: T): List<FoundIssue>
 }
@@ -9,7 +9,7 @@ interface QualityInspector<T> {
 /** Inspector가 대상 데이터에서 발견한 품질 문제를 표현한다. */
 data class FoundIssue(
     val suggestedType: QualityIssueType,
-    val inspectionScope: InspectionScope,
+    val inspectionName: InspectionName,
     val inspectionRuleCode: InspectionRuleCode,
     val severity: InspectionSeverity,
     val title: String,

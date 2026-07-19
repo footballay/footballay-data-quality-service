@@ -1,7 +1,6 @@
 package com.footballay.footballaydataqualityservice.pipeline.processing
 
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
-import com.footballay.footballaydataqualityservice.inspection.validateInspectionIdentifier
 import com.footballay.footballaydataqualityservice.logger
 import com.footballay.footballaydataqualityservice.pipeline.QualityChecker
 import com.footballay.footballaydataqualityservice.pipeline.idempotency.RawEventIdempotencyChecker
@@ -86,9 +85,7 @@ class DataQualityInspectionPipelineService(
         )
 
     private fun FoundIssue.toInspectionRuleCode(event: RawCollectedEvent): String {
-        validateInspectionIdentifier("Inspection scope", inspectionScope.value)
-        validateInspectionIdentifier("Inspection rule code", inspectionRuleCode.value)
-        return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionScope.value, inspectionRuleCode.value)
+        return listOf(event.provider.toCodeValue(), event.endpointKey.toCodeValue(), inspectionName.value, inspectionRuleCode.value)
             .joinToString(":")
     }
 

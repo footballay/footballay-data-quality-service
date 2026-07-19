@@ -6,7 +6,7 @@ import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionResponseLocation
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import com.footballay.footballaydataqualityservice.pipeline.input.DataProvider
 import com.footballay.footballaydataqualityservice.pipeline.input.QualityCheckRequest
@@ -111,7 +111,7 @@ class DataQualityInspectionPipelineServiceTest {
                     listOf(
                         FoundIssue(
                             suggestedType = QualityIssueType.UNEXPECTED_NULL,
-                            inspectionScope = TestScope.FIXTURE_STATUS,
+                            inspectionName = InspectionName.of("FIXTURE_STATUS"),
                             inspectionRuleCode = TestRuleCode.LONG_NULL,
                             severity = InspectionSeverity.CRITICAL,
                             title = "Player ID is null",
@@ -156,14 +156,6 @@ class DataQualityInspectionPipelineServiceTest {
             rawJsonObjectKey = "football-data/raw/example.json.gz",
             collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
         )
-
-    private enum class TestScope : InspectionScope {
-        FIXTURE_STATUS,
-        ;
-
-        override val value: String
-            get() = name
-    }
 
     private enum class TestRuleCode : InspectionRuleCode {
         LONG_NULL,

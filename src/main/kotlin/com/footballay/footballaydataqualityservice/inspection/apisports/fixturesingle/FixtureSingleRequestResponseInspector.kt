@@ -3,13 +3,13 @@ package com.footballay.footballaydataqualityservice.inspection.apisports.fixture
 import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 /** API Sports Fixture Single 요청과 응답 식별자의 정합성을 검사한다. */
 class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequestResponse> {
-    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.REQUEST_RESPONSE
+    override val inspectionName = InspectionName.of("REQUEST_RESPONSE")
 
     override fun inspect(target: FixtureSingleRequestResponse): List<FoundIssue> {
         val requestedFixtureId = target.request.fixtureId ?: return emptyList()
@@ -19,7 +19,7 @@ class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequ
             findings +=
                 fixtureSingleFoundIssue(
                     suggestedType = Code.PARAMETER_ID_MISSING.suggestedType,
-                    inspectionScope = inspectionScope,
+                    inspectionName = inspectionName,
                     inspectionRuleCode = Code.PARAMETER_ID_MISSING,
                     severity = InspectionSeverity.WARN,
                     title = "Response parameters do not contain fixture ID",
@@ -34,7 +34,7 @@ class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequ
             findings +=
                 fixtureSingleFoundIssue(
                     suggestedType = Code.PARAMETER_ID_MISMATCH.suggestedType,
-                    inspectionScope = inspectionScope,
+                    inspectionName = inspectionName,
                     inspectionRuleCode = Code.PARAMETER_ID_MISMATCH,
                     severity = InspectionSeverity.ERROR,
                     title = "Response parameter fixture ID does not match request",
@@ -54,7 +54,7 @@ class FixtureSingleRequestResponseInspector : QualityInspector<FixtureSingleRequ
                 findings +=
                     fixtureSingleFoundIssue(
                         suggestedType = Code.FIXTURE_ID_MISMATCH.suggestedType,
-                        inspectionScope = inspectionScope,
+                        inspectionName = inspectionName,
                         inspectionRuleCode = Code.FIXTURE_ID_MISMATCH,
                         severity = InspectionSeverity.ERROR,
                         title = "Fixture ID does not match request",

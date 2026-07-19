@@ -28,7 +28,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = ApiSportsFixtureSingleResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.inspectionScope.value }).containsOnly("ROOT")
+        assertThat(issues.map { it.inspectionName.value }).containsOnly("ROOT")
         assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "PARAMETER_ID_INVALID",
@@ -77,7 +77,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureInspector().inspect(target)
 
-        assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE")
+        assertThat(issues.map { it.inspectionName.value }).containsOnly("FIXTURE")
         assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "ID_NON_POSITIVE",
@@ -123,7 +123,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val findings = FixtureInspector().inspect(target)
 
-        assertThat(findings.single { it.inspectionRuleCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.inspectionScope.value)
+        assertThat(findings.single { it.inspectionRuleCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.inspectionName.value)
             .isEqualTo("FIXTURE")
         assertThat(findings.single { it.inspectionRuleCode.value == "SECOND_PERIOD_BEFORE_KICKOFF" }.severity)
             .isEqualTo(InspectionSeverity.ERROR)
@@ -157,7 +157,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureStatusInspector().inspect(target)
 
-        assertThat(issues.map { it.inspectionScope.value }).containsOnly("FIXTURE_STATUS")
+        assertThat(issues.map { it.inspectionName.value }).containsOnly("FIXTURE_STATUS")
         assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly(
                 "LONG_BLANK",
@@ -189,7 +189,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issues = FixtureSingleRequestResponseInspector().inspect(target)
 
-        assertThat(issues.map { it.inspectionScope.value }).containsOnly("REQUEST_RESPONSE")
+        assertThat(issues.map { it.inspectionName.value }).containsOnly("REQUEST_RESPONSE")
         assertThat(issues.map { it.inspectionRuleCode.value })
             .containsExactly("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH")
         assertThat(issues.map { it.suggestedType })
@@ -206,7 +206,7 @@ class ApiSportsFixtureSingleInspectorsTest {
 
         val issue = FixtureSingleRequestResponseInspector().inspect(target).single()
 
-        assertThat(issue.inspectionScope.value).isEqualTo("REQUEST_RESPONSE")
+        assertThat(issue.inspectionName.value).isEqualTo("REQUEST_RESPONSE")
         assertThat(issue.inspectionRuleCode.value).isEqualTo("PARAMETER_ID_MISMATCH")
         assertThat(issue.suggestedType).isEqualTo(QualityIssueType.INCONSISTENT_INFORMATION)
         assertThat(issue.severity).isEqualTo(InspectionSeverity.ERROR)

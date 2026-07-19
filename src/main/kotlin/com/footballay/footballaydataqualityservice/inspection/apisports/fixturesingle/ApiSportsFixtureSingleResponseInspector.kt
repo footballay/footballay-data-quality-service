@@ -4,13 +4,13 @@ import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 
 /** API Sports Fixture Single 최상위 응답 구조를 검사한다. */
 class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
-    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.ROOT
+    override val inspectionName = InspectionName.of("ROOT")
 
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
@@ -225,7 +225,7 @@ class ApiSportsFixtureSingleResponseInspector : QualityInspector<ApiSportsFixtur
         section: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, section, path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionName, code, severity, title, section, path, evidence)
 
     private fun hasErrors(errors: com.fasterxml.jackson.databind.JsonNode): Boolean =
         !errors.isContainerNode || errors.size() > 0

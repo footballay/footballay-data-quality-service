@@ -4,14 +4,14 @@ import com.footballay.footballaydataqualityservice.inspection.FoundIssue
 import com.footballay.footballaydataqualityservice.inspection.InspectionEvidence
 import com.footballay.footballaydataqualityservice.inspection.InspectionRuleCode
 import com.footballay.footballaydataqualityservice.inspection.InspectionSeverity
-import com.footballay.footballaydataqualityservice.inspection.InspectionScope
+import com.footballay.footballaydataqualityservice.inspection.InspectionName
 import com.footballay.footballaydataqualityservice.inspection.QualityInspector
 import com.footballay.footballaydataqualityservice.inspection.QualityIssueType
 import java.time.OffsetDateTime
 
 /** API Sports Fixture Single fixture 기본 정보와 시간 정보를 검사한다. */
 class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
-    override val inspectionScope: InspectionScope = FixtureSingleInspectionScope.FIXTURE
+    override val inspectionName = InspectionName.of("FIXTURE")
 
     override fun inspect(target: ApiSportsFixtureSingleRootDto): List<FoundIssue> {
         val root = target
@@ -274,7 +274,7 @@ class FixtureInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
         title: String,
         path: String,
         evidence: InspectionEvidence? = null,
-    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionScope, code, severity, title, "fixture", path, evidence)
+    ): FoundIssue = fixtureSingleFoundIssue(code.suggestedType, inspectionName, code, severity, title, "fixture", path, evidence)
 
     private fun evidence(vararg entries: Pair<String, String?>): InspectionEvidence = fixtureSingleEvidence(*entries)
 

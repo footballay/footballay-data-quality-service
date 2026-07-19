@@ -61,6 +61,8 @@ class ProcessorRoutingQualityCheckerTest {
         inspect: () -> List<FoundIssue>,
     ): QualityInspectionProcessor =
         object : QualityInspectionProcessor {
+            override fun inspectors(): List<QualityInspector<*>> = emptyList()
+
             override fun supports(
                 provider: DataProvider,
                 endpointKey: String,

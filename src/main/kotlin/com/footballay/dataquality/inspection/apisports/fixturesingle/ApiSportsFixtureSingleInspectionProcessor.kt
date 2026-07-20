@@ -53,9 +53,9 @@ class ApiSportsFixtureSingleInspectionProcessor(
                 return logAndReturnFailureWhenMappingReturnNull(request)
             }
 
-        val responseIssues = collectIssues(responseInspectors, root)
+        val responseIssues = collectIssues(request, responseInspectors, root)
         val requestResponseTarget = createReqRespTarget(request, root)
-        val requestResponseIssues = collectIssues(requestResponseInspectors, requestResponseTarget)
+        val requestResponseIssues = collectIssues(request, requestResponseInspectors, requestResponseTarget)
 
         return responseIssues + requestResponseIssues
     }
@@ -95,11 +95,18 @@ class ApiSportsFixtureSingleInspectionProcessor(
         )
 
     private fun <T> collectIssues(
+        request: QualityCheckRequest,
         inspectors: List<QualityInspector<T>>,
         target: T,
     ): List<FoundIssue> =
         inspectors.flatMap { inspector ->
-            val foundIssues = inspector.inspect(target)
+            val foundIssues =
+                try {
+                    inspector.inspect(target)
+                } catch (exception: Exception) {
+                    logInspectorFailure(request, inspector, exception)
+                    return@flatMap listOf(inspectorExecutionFailed(inspector, exception))
+                }
             foundIssues.forEach { foundIssue ->
                 check(foundIssue.inspectionName == inspector.inspectionName) {
                     "Inspector returned an issue with a mismatched inspection name. " +
@@ -110,6 +117,38 @@ class ApiSportsFixtureSingleInspectionProcessor(
             }
             foundIssues
         }
+
+    private fun logInspectorFailure(
+        request: QualityCheckRequest,
+        inspector: QualityInspector<*>,
+        exception: Exception,
+    ) {
+        log.error(
+            "Inspector execution failed. provider={}, endpointKey={}, inspectionName={}",
+            request.provider,
+            request.endpointKey,
+            inspector.inspectionName.value,
+            exception,
+        )
+    }
+
+    private fun inspectorExecutionFailed(
+        inspector: QualityInspector<*>,
+        exception: Exception,
+    ): FoundIssue =
+        FoundIssue(
+            suggestedType = QualityIssueType.UNEXPECTED_RESPONSE,
+            inspectionName = inspector.inspectionName,
+            inspectionRuleCode = ProcessorCode.INSPECTION_FAILED,
+            severity = InspectionSeverity.CRITICAL,
+            title = "Inspector failed while checking response",
+            responseLocation = InspectionResponseLocation("inspection", "$"),
+            evidence =
+                InspectionEvidence.of(
+                    "exceptionType" to exception.javaClass.simpleName,
+                    "message" to exception.message,
+                ),
+        )
 
     private fun rootResponseNull(): FoundIssue =
         FoundIssue(
@@ -145,6 +184,7 @@ class ApiSportsFixtureSingleInspectionProcessor(
     private enum class ProcessorCode : InspectionRuleCode {
         ROOT_NULL,
         MAPPING_FAILED,
+        INSPECTION_FAILED,
         ;
 
         override val value: String

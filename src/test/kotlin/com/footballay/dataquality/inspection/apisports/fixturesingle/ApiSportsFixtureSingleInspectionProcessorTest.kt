@@ -80,6 +80,47 @@ class ApiSportsFixtureSingleInspectionProcessorTest {
     }
 
     @Test
+    fun `records an inspection failed issue and continues with following inspectors`() {
+        val failingInspector =
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("FIXTURE_STATUS")) {
+                throw IllegalArgumentException("Unexpected fixture status")
+            }
+        var followingInspectorInvoked = false
+        val followingInspector =
+            TestInspector<ApiSportsFixtureSingleRootDto>(InspectionName.of("FIXTURE")) {
+                followingInspectorInvoked = true
+                listOf(
+                    FoundIssue(
+                        suggestedType = QualityIssueType.INVALID_FORMAT,
+                        inspectionName = InspectionName.of("FIXTURE"),
+                        inspectionRuleCode = TestRuleCode.ROOT_ISSUE,
+                        severity = InspectionSeverity.WARN,
+                        title = "Following inspector issue",
+                        responseLocation = InspectionResponseLocation("fixture", "$.fixture.id"),
+                    ),
+                )
+            }
+        val processor =
+            ApiSportsFixtureSingleInspectionProcessor(objectMapper, listOf(failingInspector, followingInspector), emptyList())
+
+        val result = processor.inspect(request(), objectMapper.readTree("""{"get":"fixtures"}"""))
+
+        assertThat(followingInspectorInvoked).isTrue()
+        assertThat(result).hasSize(2)
+        val failedIssue = result.first()
+        assertThat(failedIssue.inspectionName).isEqualTo(InspectionName.of("FIXTURE_STATUS"))
+        assertThat(failedIssue.inspectionRuleCode.value).isEqualTo("INSPECTION_FAILED")
+        assertThat(failedIssue.suggestedType).isEqualTo(QualityIssueType.UNEXPECTED_RESPONSE)
+        assertThat(failedIssue.severity).isEqualTo(InspectionSeverity.CRITICAL)
+        assertThat(failedIssue.title).isEqualTo("Inspector failed while checking response")
+        assertThat(failedIssue.responseLocation).isEqualTo(InspectionResponseLocation("inspection", "$"))
+        assertThat(failedIssue.evidence?.values)
+            .containsEntry("exceptionType", "IllegalArgumentException")
+            .containsEntry("message", "Unexpected fixture status")
+        assertThat(result.last().inspectionRuleCode).isEqualTo(TestRuleCode.ROOT_ISSUE)
+    }
+
+    @Test
     fun `returns a critical issue when raw JSON cannot map to the root DTO`() {
         val processor = ApiSportsFixtureSingleInspectionProcessor(objectMapper, emptyList(), emptyList())
 

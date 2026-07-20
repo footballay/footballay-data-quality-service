@@ -148,6 +148,40 @@ class DataQualityInspectionPipelineServiceTest {
     }
 
     @Test
+    fun `materializes an inspector execution failure with its composite inspection code`() {
+        var savedWrite: QualityResultWrite? = null
+        val pipeline =
+            DataQualityInspectionPipelineService(
+                idempotencyChecker = { true },
+                rawResponseReader = { JsonNodeFactory.instance.objectNode() },
+                qualityChecker = { _, _ ->
+                    listOf(
+                        FoundIssue(
+                            suggestedType = QualityIssueType.UNEXPECTED_RESPONSE,
+                            inspectionName = InspectionName.of("FIXTURE_STATUS"),
+                            inspectionRuleCode = TestRuleCode.INSPECTION_FAILED,
+                            severity = InspectionSeverity.CRITICAL,
+                            title = "Inspector failed while checking response",
+                            responseLocation = InspectionResponseLocation("inspection", "$"),
+                            evidence = InspectionEvidence.of("exceptionType" to "IllegalArgumentException", "message" to "Unexpected status"),
+                        ),
+                    )
+                },
+                resultStore = { write ->
+                    savedWrite = write
+                    NoopQualityResultStore().save(write)
+                },
+                resultPublisher = { },
+                clock = Clock.systemUTC(),
+            )
+
+        pipeline.process(rawEvent())
+
+        assertThat(savedWrite!!.issues.single().inspectionCode)
+            .isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:INSPECTION_FAILED")
+    }
+
+    @Test
     fun `rejects an inspection rule code outside uppercase snake case`() {
         val pipeline =
             DataQualityInspectionPipelineService(
@@ -188,6 +222,7 @@ class DataQualityInspectionPipelineServiceTest {
 
     private enum class TestRuleCode : InspectionRuleCode {
         LONG_NULL,
+        INSPECTION_FAILED,
         ;
 
         override val value: String

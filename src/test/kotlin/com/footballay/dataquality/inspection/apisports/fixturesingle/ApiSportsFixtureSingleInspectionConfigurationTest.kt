@@ -31,12 +31,25 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                         ),
                     rawJson =
                         context.getBean(ObjectMapper::class.java).readTree(
-                            """{"get":"fixtures","parameters":{},"errors":[],"results":1,"paging":{"current":1,"total":1},"response":[{"fixture":{"id":654321}}]}""",
+                            """
+                            {
+                              "get":"fixtures",
+                              "parameters":{},
+                              "errors":[],
+                              "results":1,
+                              "paging":{"current":1,"total":1},
+                              "response":[{
+                                "fixture":{"id":654321},
+                                "league":{"id":0,"name":"League","season":2026,"round":"Round 1"},
+                                "teams":{"home":{"id":1,"name":"Home"},"away":null}
+                              }]
+                            }
+                            """.trimIndent(),
                         ),
                 )
 
             assertThat(result.map { it.inspectionRuleCode.value })
-                .contains("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH")
+                .contains("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH", "LEAGUE_ID_MISSING_OR_INVALID", "AWAY_TEAM_MISSING")
         }
     }
 }

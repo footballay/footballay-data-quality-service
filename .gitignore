@@ -46,3 +46,6 @@ plan/*
 
 .codex
 .codex/*
+
+# Local reference documents
+/docs/

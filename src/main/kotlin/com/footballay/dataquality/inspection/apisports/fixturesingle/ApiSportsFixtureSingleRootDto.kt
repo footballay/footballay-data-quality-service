@@ -27,6 +27,29 @@ data class ApiSportsFixtureSinglePagingDto(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ApiSportsFixtureSingleResponseDto(
     val fixture: ApiSportsFixtureSingleFixtureDto? = null,
+    val league: ApiSportsFixtureSingleLeagueDto? = null,
+    val teams: ApiSportsFixtureSingleTeamsDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLeagueDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val season: Int? = null,
+    val round: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleTeamsDto(
+    val home: ApiSportsFixtureSingleTeamDto? = null,
+    val away: ApiSportsFixtureSingleTeamDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleTeamDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val winner: Boolean? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

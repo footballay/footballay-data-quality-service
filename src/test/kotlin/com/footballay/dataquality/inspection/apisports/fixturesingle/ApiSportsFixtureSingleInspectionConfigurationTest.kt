@@ -41,7 +41,10 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                               "response":[{
                                 "fixture":{"id":654321},
                                 "league":{"id":0,"name":"League","season":2026,"round":"Round 1"},
-                                "teams":{"home":{"id":1,"name":"Home"},"away":null}
+                                "teams":{"home":{"id":1,"name":"Home"},"away":null},
+                                "goals":{"home":-1,"away":0},
+                                "score":{"fulltime":{"home":0,"away":0}},
+                                "events":[{"time":{"elapsed":1},"team":{"id":1},"type":"Provider Change","detail":"Value"}]
                               }]
                             }
                             """.trimIndent(),
@@ -49,7 +52,14 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                 )
 
             assertThat(result.map { it.inspectionRuleCode.value })
-                .contains("PARAMETER_ID_MISSING", "FIXTURE_ID_MISMATCH", "LEAGUE_ID_MISSING_OR_INVALID", "AWAY_TEAM_MISSING")
+                .contains(
+                    "PARAMETER_ID_MISSING",
+                    "FIXTURE_ID_MISMATCH",
+                    "LEAGUE_ID_MISSING_OR_INVALID",
+                    "AWAY_TEAM_MISSING",
+                    "GOALS_NEGATIVE",
+                    "UNKNOWN_EVENT_TYPE",
+                )
         }
     }
 }

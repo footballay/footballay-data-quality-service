@@ -45,6 +45,14 @@ class ApiSportsFixtureSingleInspectionConfiguration {
     fun teamsInspector(): QualityInspector<ApiSportsFixtureSingleRootDto> = TeamsInspector()
 
     @Bean
+    @Order(600)
+    fun scoreInspector(): QualityInspector<ApiSportsFixtureSingleRootDto> = ScoreInspector()
+
+    @Bean
+    @Order(700)
+    fun eventsInspector(): QualityInspector<ApiSportsFixtureSingleRootDto> = EventsInspector()
+
+    @Bean
     @Order(100)
     fun fixtureSingleRequestResponseInspector(): QualityInspector<FixtureSingleRequestResponse> =
         FixtureSingleRequestResponseInspector()

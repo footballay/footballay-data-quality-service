@@ -96,7 +96,7 @@ class LeagueInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
             }
 
             val statusShort = response.fixture?.status?.short
-            if (statusShort in ROUND_REQUIRED_STATUS_SHORTS) {
+            if (FixtureStatusSemantics.hasStarted(statusShort)) {
                 when {
                     league.round == null ->
                         findings += issue(
@@ -150,21 +150,5 @@ class LeagueInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     private companion object {
         const val MIN_SEASON = 1900
         const val MAX_SEASON = 2100
-        val ROUND_REQUIRED_STATUS_SHORTS =
-            setOf(
-                "1H",
-                "HT",
-                "2H",
-                "ET",
-                "BT",
-                "P",
-                "SUSP",
-                "INT",
-                "LIVE",
-                "FT",
-                "AET",
-                "PEN",
-                "ABD",
-            )
     }
 }

@@ -29,6 +29,9 @@ data class ApiSportsFixtureSingleResponseDto(
     val fixture: ApiSportsFixtureSingleFixtureDto? = null,
     val league: ApiSportsFixtureSingleLeagueDto? = null,
     val teams: ApiSportsFixtureSingleTeamsDto? = null,
+    val goals: ApiSportsFixtureSingleScorePairDto? = null,
+    val score: ApiSportsFixtureSingleScoreDto? = null,
+    val events: List<ApiSportsFixtureSingleEventDto?>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -50,6 +53,48 @@ data class ApiSportsFixtureSingleTeamDto(
     val id: Long? = null,
     val name: String? = null,
     val winner: Boolean? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleScorePairDto(
+    val home: Long? = null,
+    val away: Long? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleScoreDto(
+    val halftime: ApiSportsFixtureSingleScorePairDto? = null,
+    val fulltime: ApiSportsFixtureSingleScorePairDto? = null,
+    val extratime: ApiSportsFixtureSingleScorePairDto? = null,
+    val penalty: ApiSportsFixtureSingleScorePairDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleEventDto(
+    val time: ApiSportsFixtureSingleEventTimeDto? = null,
+    val team: ApiSportsFixtureSingleEventTeamDto? = null,
+    val player: ApiSportsFixtureSingleEventPersonDto? = null,
+    val assist: ApiSportsFixtureSingleEventPersonDto? = null,
+    val type: String? = null,
+    val detail: String? = null,
+    val comments: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleEventTimeDto(
+    val elapsed: Long? = null,
+    val extra: Long? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleEventTeamDto(
+    val id: Long? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleEventPersonDto(
+    val id: Long? = null,
+    val name: String? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

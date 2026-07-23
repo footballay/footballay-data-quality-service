@@ -33,6 +33,19 @@ data class ApiSportsFixtureSingleResponseDto(
     val score: ApiSportsFixtureSingleScoreDto? = null,
     val events: List<ApiSportsFixtureSingleEventDto?>? = null,
     val lineups: List<ApiSportsFixtureSingleLineupDto?>? = null,
+    val statistics: List<ApiSportsFixtureSingleTeamStatisticsDto?>? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleTeamStatisticsDto(
+    val team: ApiSportsFixtureSingleEventTeamDto? = null,
+    val statistics: List<ApiSportsFixtureSingleStatisticDto?>? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleStatisticDto(
+    val type: String? = null,
+    val value: JsonNode? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -21,11 +21,12 @@ class ApiSportsFixtureSingleInspectionProcessor(
     private val objectMapper: ObjectMapper,
     private val responseInspectors: List<QualityInspector<ApiSportsFixtureSingleRootDto>>,
     private val requestResponseInspectors: List<QualityInspector<FixtureSingleRequestResponse>>,
+    private val lineupAvailabilityInspectors: List<QualityInspector<FixtureSingleLineupAvailabilityTarget>> = emptyList(),
 ) : QualityInspectionProcessor {
     private val log = logger()
     private val rawMappingInspectionName = InspectionName.of("RAW_MAPPING")
 
-    override fun inspectors(): List<QualityInspector<*>> = responseInspectors + requestResponseInspectors
+    override fun inspectors(): List<QualityInspector<*>> = responseInspectors + requestResponseInspectors + lineupAvailabilityInspectors
 
     override fun inspectionNames(): List<InspectionName> =
         super<QualityInspectionProcessor>.inspectionNames() + rawMappingInspectionName
@@ -56,8 +57,10 @@ class ApiSportsFixtureSingleInspectionProcessor(
         val responseIssues = collectIssues(request, responseInspectors, root)
         val requestResponseTarget = createReqRespTarget(request, root)
         val requestResponseIssues = collectIssues(request, requestResponseInspectors, requestResponseTarget)
+        val lineupAvailabilityTarget = FixtureSingleLineupAvailabilityTarget(root, request.collectedAt)
+        val lineupAvailabilityIssues = collectIssues(request, lineupAvailabilityInspectors, lineupAvailabilityTarget)
 
-        return responseIssues + requestResponseIssues
+        return responseIssues + requestResponseIssues + lineupAvailabilityIssues
     }
 
     private fun logAndReturnFailureWhenMappingReturnNull(request: QualityCheckRequest): List<FoundIssue> {

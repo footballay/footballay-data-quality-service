@@ -32,6 +32,7 @@ data class ApiSportsFixtureSingleResponseDto(
     val goals: ApiSportsFixtureSingleScorePairDto? = null,
     val score: ApiSportsFixtureSingleScoreDto? = null,
     val events: List<ApiSportsFixtureSingleEventDto?>? = null,
+    val lineups: List<ApiSportsFixtureSingleLineupDto?>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -93,6 +94,54 @@ data class ApiSportsFixtureSingleEventTeamDto(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ApiSportsFixtureSingleEventPersonDto(
+    val id: Long? = null,
+    val name: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupDto(
+    val team: ApiSportsFixtureSingleLineupTeamDto? = null,
+    val formation: String? = null,
+    val startXI: List<ApiSportsFixtureSingleLineupPlayerEntryDto?>? = null,
+    val substitutes: List<ApiSportsFixtureSingleLineupPlayerEntryDto?>? = null,
+    val coach: ApiSportsFixtureSingleLineupCoachDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupTeamDto(
+    val id: Long? = null,
+    val colors: ApiSportsFixtureSingleLineupColorsDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupColorsDto(
+    val player: ApiSportsFixtureSingleLineupColorDto? = null,
+    val goalkeeper: ApiSportsFixtureSingleLineupColorDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupColorDto(
+    val primary: String? = null,
+    val number: String? = null,
+    val border: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupPlayerEntryDto(
+    val player: ApiSportsFixtureSingleLineupPlayerDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupPlayerDto(
+    val id: Long? = null,
+    val name: String? = null,
+    val number: Long? = null,
+    val pos: String? = null,
+    val grid: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSingleLineupCoachDto(
     val id: Long? = null,
     val name: String? = null,
 )

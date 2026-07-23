@@ -57,6 +57,7 @@ class DataQualityInspectionPipelineService(
             provider = provider,
             endpointKey = endpointKey,
             parameters = parameters.groupBy(QualityParameter::name, QualityParameter::value),
+            collectedAt = collectedAt,
         )
 
     private fun createWrite(

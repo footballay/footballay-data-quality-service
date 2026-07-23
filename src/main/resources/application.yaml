@@ -12,6 +12,9 @@ spring:
 
 footballay:
   data-quality:
+    fixture-single:
+      lineup-availability:
+        not-started-grace-minutes: ${FOOTBALLAY_DATA_QUALITY_FIXTURE_SINGLE_LINEUP_AVAILABILITY_NOT_STARTED_GRACE_MINUTES:3}
     pipeline:
       enabled: false
       consumer-group: footballay-data-quality-service

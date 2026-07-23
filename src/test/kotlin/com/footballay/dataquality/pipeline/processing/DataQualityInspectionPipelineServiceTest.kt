@@ -67,6 +67,7 @@ class DataQualityInspectionPipelineServiceTest {
                     provider = DataProvider.API_SPORTS,
                     endpointKey = "fixtureSingle",
                     parameters = mapOf("fixtureId" to listOf("123456")),
+                    collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
                 ),
             )
         assertThat(published).isNotNull

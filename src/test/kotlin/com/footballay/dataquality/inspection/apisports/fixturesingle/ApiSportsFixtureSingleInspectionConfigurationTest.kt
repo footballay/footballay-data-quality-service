@@ -66,7 +66,7 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                     "UNKNOWN_EVENT_TYPE",
                     "LINEUP_OBJECT_NULL",
                 )
-            assertThat(processor.inspectionNames().map { it.value }).contains("LINEUP_AVAILABILITY", "TEAM_STATISTICS", "PLAYER_STATISTICS")
+            assertThat(processor.inspectionNames().map { it.value }).contains("LINEUP_AVAILABILITY", "TEAM_STATISTICS", "PLAYER_STATISTICS", "CROSS_REFERENCE")
         }
     }
 

@@ -69,6 +69,10 @@ class ApiSportsFixtureSingleInspectionConfiguration {
     fun playerStatisticsInspector(): QualityInspector<ApiSportsFixtureSingleRootDto> = PlayerStatisticsInspector()
 
     @Bean
+    @Order(1100)
+    fun crossReferenceInspector(): QualityInspector<ApiSportsFixtureSingleRootDto> = CrossReferenceInspector()
+
+    @Bean
     @Order(850)
     fun lineupAvailabilityInspector(properties: LineupAvailabilityProperties): QualityInspector<FixtureSingleLineupAvailabilityTarget> =
         LineupAvailabilityInspector(properties)

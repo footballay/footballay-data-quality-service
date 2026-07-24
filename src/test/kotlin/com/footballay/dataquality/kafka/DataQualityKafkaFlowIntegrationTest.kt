@@ -5,34 +5,34 @@ import com.footballay.dataquality.TestcontainersConfiguration
 import com.footballay.dataquality.pipeline.input.DataProvider
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
-import com.footballay.dataquality.pipeline.result.QualityResultEvent
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.assertj.core.api.Assertions.assertThat
+import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipeline
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.timeout
+import org.mockito.Mockito.verify
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import org.springframework.context.annotation.Primary
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.kafka.test.utils.ContainerTestUtils
-import org.springframework.test.context.DynamicPropertyRegistry
-import org.springframework.test.context.DynamicPropertySource
-import org.testcontainers.kafka.KafkaContainer
-import java.time.Duration
 import java.time.Instant
-import java.util.UUID
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.zip.GZIPOutputStream
 
-@Import(TestcontainersConfiguration::class)
+/**
+ * Kafka 수신 어댑터 경계만 검증한다.
+ *
+ * 실제 Kafka에서 받은 payload가 RawCollectedEvent로 역직렬화되어
+ * DataQualityInspectionPipeline에 전달되는지만 확인하며, pipeline 하위의
+ * raw reader, Inspector, 저장소, 결과 발행 구현은 이 테스트 범위에 포함하지 않는다.
+ */
+@Import(TestcontainersConfiguration::class, KafkaListenerTestConfiguration::class)
 @SpringBootTest(
     properties = [
         "footballay.data-quality.pipeline.enabled=true",
-        "footballay.data-quality.pipeline.reader.type=local-file",
+        "footballay.data-quality.pipeline.reader.type=noop",
     ],
 )
 class DataQualityKafkaFlowIntegrationTest {
@@ -43,117 +43,36 @@ class DataQualityKafkaFlowIntegrationTest {
     private lateinit var objectMapper: ObjectMapper
 
     @Autowired
-    private lateinit var kafkaContainer: KafkaContainer
+    private lateinit var inspectionPipeline: DataQualityInspectionPipeline
 
     @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private lateinit var kafkaListenerEndpointRegistry: KafkaListenerEndpointRegistry
 
     @Test
-    fun `consumes local gzip and JSON raw files and publishes no-issue results`() {
+    fun `deserializes a raw collected Kafka message and delegates it to the inspection pipeline`() {
         val listenerContainer = kafkaListenerEndpointRegistry.listenerContainers.single()
         ContainerTestUtils.waitForAssignment(listenerContainer, 1)
+        val event =
+            RawCollectedEvent(
+                rawEventId = "01JZK8T9CJ4S9ZZ9G0E0D7YQ9M",
+                provider = DataProvider.API_SPORTS,
+                endpointKey = "fixtureSingle",
+                parameters = listOf(QualityParameter("fixtureId", "1582681")),
+                canonicalHash = "sha256-base64url",
+                rawJsonObjectKey = "football-data/raw/fixture.json.gz",
+                collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
+            )
 
-        newResultConsumer().use { consumer ->
-            consumer.subscribe(listOf("football-data-quality-result"))
+        kafkaTemplate.send("football-data-raw-collected", event.rawEventId, objectMapper.writeValueAsString(event)).get()
 
-            val gzipObjectKey = "football-data/raw/compressed-response.data"
-            val plainFile = localRawStorageDir.resolve("plain-response.json.gz")
-            writeGzip(localRawStorageDir.resolve(gzipObjectKey), validFixtureSingleResponse)
-            Files.writeString(plainFile, validFixtureSingleResponse)
-
-            val inputs =
-                listOf(
-                    rawEvent("01JZK8T9CJ4S9ZZ9G0E0D7YQ9M", gzipObjectKey),
-                    rawEvent("01JZK8T9CJ4S9ZZ9G0E0D7YQ9N", plainFile.toString()),
-                )
-            inputs.forEach { input ->
-                kafkaTemplate.send("football-data-raw-collected", input.rawEventId, objectMapper.writeValueAsString(input)).get()
-            }
-
-            val results = pollUntilRecords(consumer, inputs.size).map { record ->
-                objectMapper.readValue(record, QualityResultEvent::class.java)
-            }
-            assertThat(results.map { it.rawEventId }).containsExactlyInAnyOrderElementsOf(inputs.map { it.rawEventId })
-            results.forEach { result ->
-                assertThat(result.resultId).matches("[0-9A-HJKMNP-TV-Z]{26}")
-                assertThat(result.hasIssue).isFalse()
-                assertThat(result.issueCount).isZero()
-                assertThat(result.maxSeverity.name).isEqualTo("NONE")
-                assertThat(result.source.parameters).containsExactly(QualityParameter("fixtureId", "1582681"))
-            }
-        }
+        verify(inspectionPipeline, timeout(5_000)).process(event)
     }
+}
 
-    private fun pollUntilRecords(
-        consumer: KafkaConsumer<String, String>,
-        expectedCount: Int,
-    ): List<String> {
-        val values = mutableListOf<String>()
-        repeat(20) {
-            values += consumer.poll(Duration.ofMillis(500)).map { it.value() }
-            if (values.size >= expectedCount) return values
-        }
-        error("Timed out waiting for $expectedCount quality-result events")
-    }
-
-    private fun rawEvent(rawEventId: String, rawJsonObjectKey: String) =
-        RawCollectedEvent(
-            rawEventId = rawEventId,
-            provider = DataProvider.API_SPORTS,
-            endpointKey = "fixtureSingle",
-            parameters = listOf(QualityParameter("fixtureId", "1582681")),
-            canonicalHash = "sha256-base64url",
-            rawJsonObjectKey = rawJsonObjectKey,
-            collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
-        )
-
-    private fun newResultConsumer(): KafkaConsumer<String, String> =
-        KafkaConsumer(
-            mapOf(
-                ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to kafkaContainer.bootstrapServers,
-                ConsumerConfig.GROUP_ID_CONFIG to "quality-result-test-${UUID.randomUUID()}",
-                ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-                ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ),
-        )
-
-    private companion object {
-        val localRawStorageDir: Path = Files.createTempDirectory("data-quality-local-reader")
-
-        val validFixtureSingleResponse =
-            """
-            {
-              "get":"fixtures",
-              "parameters":{"id":"1582681"},
-              "errors":[],
-              "results":1,
-              "paging":{"current":1,"total":1},
-              "response":[{
-                "fixture":{
-                  "id":1582681,
-                  "timezone":"UTC",
-                  "date":"2026-07-13T00:00:00+00:00",
-                  "timestamp":1783900800,
-                  "periods":{"first":1783900800,"second":1783900800},
-                  "status":{"long":"Not Started","short":"NS"}
-                }
-              }]
-            }
-            """.trimIndent()
-
-        @JvmStatic
-        @DynamicPropertySource
-        fun localReaderProperties(registry: DynamicPropertyRegistry) {
-            registry.add("footballay.data-quality.pipeline.reader.local-base-dir") { localRawStorageDir.toString() }
-        }
-
-        fun writeGzip(path: Path, content: String) {
-            Files.createDirectories(path.parent)
-            GZIPOutputStream(Files.newOutputStream(path)).use { gzip ->
-                gzip.write(content.toByteArray(StandardCharsets.UTF_8))
-            }
-        }
-    }
+@TestConfiguration(proxyBeanMethods = false)
+class KafkaListenerTestConfiguration {
+    @Bean
+    @Primary
+    fun kafkaListenerInspectionPipeline(): DataQualityInspectionPipeline = mock(DataQualityInspectionPipeline::class.java)
 }

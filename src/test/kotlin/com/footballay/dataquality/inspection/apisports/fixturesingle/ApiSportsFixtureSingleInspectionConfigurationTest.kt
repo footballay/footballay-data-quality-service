@@ -13,7 +13,7 @@ import java.util.function.Supplier
 class ApiSportsFixtureSingleInspectionConfigurationTest {
     private val contextRunner =
         ApplicationContextRunner()
-            .withBean(ObjectMapper::class.java, Supplier { ObjectMapper() })
+            .withBean(ObjectMapper::class.java, Supplier { ObjectMapper().findAndRegisterModules() })
             .withUserConfiguration(ApiSportsFixtureSingleInspectionConfiguration::class.java)
             .withPropertyValues(
                 "footballay.data-quality.pipeline.enabled=true",
@@ -66,7 +66,7 @@ class ApiSportsFixtureSingleInspectionConfigurationTest {
                     "UNKNOWN_EVENT_TYPE",
                     "LINEUP_OBJECT_NULL",
                 )
-            assertThat(processor.inspectionNames().map { it.value }).contains("LINEUP_AVAILABILITY", "TEAM_STATISTICS")
+            assertThat(processor.inspectionNames().map { it.value }).contains("LINEUP_AVAILABILITY", "TEAM_STATISTICS", "PLAYER_STATISTICS")
         }
     }
 

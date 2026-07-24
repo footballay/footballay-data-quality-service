@@ -1,6 +1,7 @@
 package com.footballay.dataquality.inspection.apisports.fixturesingle
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.JsonNode
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -34,6 +35,7 @@ data class ApiSportsFixtureSingleResponseDto(
     val events: List<ApiSportsFixtureSingleEventDto?>? = null,
     val lineups: List<ApiSportsFixtureSingleLineupDto?>? = null,
     val statistics: List<ApiSportsFixtureSingleTeamStatisticsDto?>? = null,
+    val players: List<ApiSportsFixtureSinglePlayerStatisticsTeamDto?>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -46,6 +48,77 @@ data class ApiSportsFixtureSingleTeamStatisticsDto(
 data class ApiSportsFixtureSingleStatisticDto(
     val type: String? = null,
     val value: JsonNode? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerStatisticsTeamDto(
+    val team: ApiSportsFixtureSingleEventTeamDto? = null,
+    val players: List<ApiSportsFixtureSinglePlayerStatisticsDto?>? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerStatisticsDto(
+    val player: ApiSportsFixtureSinglePlayerStatisticsPlayerDto? = null,
+    val statistics: List<ApiSportsFixtureSinglePlayerStatisticEntryDto?>? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerStatisticsPlayerDto(
+    val id: Long? = null,
+    val name: String? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerStatisticEntryDto(
+    val games: ApiSportsFixtureSinglePlayerGamesDto? = null,
+    val offsides: Long? = null,
+    val shots: ApiSportsFixtureSinglePlayerShotsDto? = null,
+    val goals: ApiSportsFixtureSinglePlayerGoalsDto? = null,
+    val passes: ApiSportsFixtureSinglePlayerPassesDto? = null,
+    val tackles: ApiSportsFixtureSinglePlayerTacklesDto? = null,
+    val duels: ApiSportsFixtureSinglePlayerDuelsDto? = null,
+    val dribbles: ApiSportsFixtureSinglePlayerDribblesDto? = null,
+    val fouls: ApiSportsFixtureSinglePlayerFoulsDto? = null,
+    val cards: ApiSportsFixtureSinglePlayerCardsDto? = null,
+    val penalty: ApiSportsFixtureSinglePlayerPenaltyDto? = null,
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerGamesDto(val minutes: Long? = null, val number: Long? = null, val position: String? = null, val rating: String? = null, val captain: Boolean? = null, val substitute: Boolean? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerShotsDto(val total: Long? = null, val on: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerGoalsDto(val total: Long? = null, val conceded: Long? = null, val assists: Long? = null, val saves: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerPassesDto(val total: Long? = null, val key: Long? = null, val accuracy: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerTacklesDto(val total: Long? = null, val blocks: Long? = null, val interceptions: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerDuelsDto(val total: Long? = null, val won: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerDribblesDto(val attempts: Long? = null, val success: Long? = null, val past: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerFoulsDto(val drawn: Long? = null, val committed: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerCardsDto(val yellow: Long? = null, val red: Long? = null)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class ApiSportsFixtureSinglePlayerPenaltyDto(
+    val won: Long? = null,
+    // API-Sports provider schema uses the misspelled field name "commited".
+    @field:JsonProperty("commited")
+    val committed: Long? = null,
+    val scored: Long? = null,
+    val missed: Long? = null,
+    val saved: Long? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

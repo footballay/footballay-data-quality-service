@@ -8,6 +8,8 @@ import com.footballay.dataquality.pipeline.input.QualityCheckRequest
 class ProcessorRoutingQualityChecker(
     private val processors: List<QualityInspectionProcessor>,
 ) : QualityChecker {
+    override val inspectionVersion: Int = 1
+
     override fun check(
         request: QualityCheckRequest,
         rawJson: JsonNode,

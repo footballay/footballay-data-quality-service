@@ -12,7 +12,8 @@ data class QualityResultWrite(
     val parameters: List<QualityParameter>,
     val canonicalHash: String,
     val rawJsonObjectKey: String,
+    val collectedAt: Instant,
     val checkedAt: Instant,
-    val inspectionVersion: String,
+    val inspectionVersion: Int,
     val issues: List<QualityIssueWrite>,
 )

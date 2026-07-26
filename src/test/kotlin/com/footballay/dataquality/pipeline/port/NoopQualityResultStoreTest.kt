@@ -29,6 +29,7 @@ class NoopQualityResultStoreTest {
 
         assertThat(result.resultId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(result.issues.map { it.issueInstanceId }).doesNotHaveDuplicates()
+        assertThat(result.collectedAt).isEqualTo(Instant.parse("2026-07-12T00:00:00Z"))
         assertThat(result.issues).allSatisfy { issue ->
             assertThat(issue.suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
             assertThat(issue.inspectionCode).isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE:ID_NULL")
@@ -74,8 +75,9 @@ class NoopQualityResultStoreTest {
             parameters = listOf(QualityParameter("fixtureId", "123456")),
             canonicalHash = "sha256-base64url",
             rawJsonObjectKey = "football-data/raw/example.json.gz",
+            collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
             checkedAt = checkedAt,
-            inspectionVersion = "test-v1",
+            inspectionVersion = 7,
             issues = issues,
         )
 }

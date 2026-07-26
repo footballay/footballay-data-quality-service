@@ -9,6 +9,13 @@ import org.junit.jupiter.api.Test
 
 class ProcessorRoutingQualityCheckerTest {
     @Test
+    fun `exposes the current inspection policy version`() {
+        val checker = ProcessorRoutingQualityChecker(emptyList())
+
+        assertThat(checker.inspectionVersion).isEqualTo(1)
+    }
+
+    @Test
     fun `routes an event to its matching processor`() {
         var called = false
         var supportsCalled = false

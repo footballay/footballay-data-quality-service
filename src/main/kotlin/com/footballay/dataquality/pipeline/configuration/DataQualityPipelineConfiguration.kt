@@ -12,6 +12,8 @@ import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipeline
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipelineService
+import com.footballay.dataquality.pipeline.processing.DefaultQualityResultWriteMapper
+import com.footballay.dataquality.pipeline.processing.QualityResultWriteMapper
 import com.footballay.dataquality.pipeline.rawresponse.LocalFileRawResponseReader
 import com.footballay.dataquality.pipeline.rawresponse.MockDataRawResponseReader
 import com.footballay.dataquality.pipeline.rawresponse.NoopRawResponseReader
@@ -64,6 +66,9 @@ class DataQualityPipelineConfiguration {
     fun qualityResultStore(): QualityResultStore = NoopQualityResultStore()
 
     @Bean
+    fun qualityResultWriteMapper(): QualityResultWriteMapper = DefaultQualityResultWriteMapper()
+
+    @Bean
     fun qualityResultPublisher(
         kafkaTemplate: KafkaTemplate<String, String>,
         objectMapper: ObjectMapper,
@@ -80,6 +85,7 @@ class DataQualityPipelineConfiguration {
         idempotencyChecker: RawEventIdempotencyChecker,
         rawResponseReader: RawResponseReader,
         qualityChecker: QualityChecker,
+        qualityResultWriteMapper: QualityResultWriteMapper,
         resultStore: QualityResultStore,
         resultPublisher: QualityResultPublisher,
     ): DataQualityInspectionPipeline =
@@ -87,6 +93,7 @@ class DataQualityPipelineConfiguration {
             idempotencyChecker = idempotencyChecker,
             rawResponseReader = rawResponseReader,
             qualityChecker = qualityChecker,
+            qualityResultWriteMapper = qualityResultWriteMapper,
             resultStore = resultStore,
             resultPublisher = resultPublisher,
             clock = Clock.systemUTC(),

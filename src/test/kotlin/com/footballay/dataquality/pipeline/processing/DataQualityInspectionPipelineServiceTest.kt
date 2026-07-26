@@ -1,5 +1,6 @@
 package com.footballay.dataquality.pipeline.processing
 
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.footballay.dataquality.inspection.FoundIssue
 import com.footballay.dataquality.inspection.InspectionEvidence
@@ -12,6 +13,7 @@ import com.footballay.dataquality.pipeline.input.DataProvider
 import com.footballay.dataquality.pipeline.input.QualityCheckRequest
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
+import com.footballay.dataquality.pipeline.QualityChecker
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
 import com.footballay.dataquality.pipeline.result.QualityCheckStatus
 import com.footballay.dataquality.pipeline.result.QualityIssueCheckStatus
@@ -42,11 +44,12 @@ class DataQualityInspectionPipelineServiceTest {
                     calls += "reader"
                     JsonNodeFactory.instance.objectNode()
                 },
-                qualityChecker = { request, _ ->
+                qualityChecker = qualityChecker { request, _ ->
                     calls += "checker"
                     checkedRequest = request
                     emptyList()
                 },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = {
                     calls += "store"
                     NoopQualityResultStore().save(it)
@@ -76,7 +79,7 @@ class DataQualityInspectionPipelineServiceTest {
         assertThat(published!!.issueCount).isZero()
         assertThat(published!!.maxSeverity).isEqualTo(QualityMaxSeverity.NONE)
         assertThat(published!!.checkStatus).isEqualTo(QualityCheckStatus.NO_ISSUE)
-        assertThat(published!!.inspectionVersion).isEqualTo("V1")
+        assertThat(published!!.inspectionVersion).isEqualTo(37)
     }
 
     @Test
@@ -89,7 +92,8 @@ class DataQualityInspectionPipelineServiceTest {
                     readCalled = true
                     JsonNodeFactory.instance.objectNode()
                 },
-                qualityChecker = { _, _ -> emptyList() },
+                qualityChecker = qualityChecker { _, _ -> emptyList() },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = NoopQualityResultStore(),
                 resultPublisher = { },
                 clock = Clock.systemUTC(),
@@ -109,7 +113,7 @@ class DataQualityInspectionPipelineServiceTest {
             DataQualityInspectionPipelineService(
                 idempotencyChecker = { true },
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
-                qualityChecker = { _, _ ->
+                qualityChecker = qualityChecker { _, _ ->
                     listOf(
                         FoundIssue(
                             suggestedType = QualityIssueType.UNEXPECTED_NULL,
@@ -122,6 +126,7 @@ class DataQualityInspectionPipelineServiceTest {
                         ),
                     )
                 },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = { write ->
                     savedWrite = write
                     NoopQualityResultStore().save(write).also { result -> savedResult = result }
@@ -135,7 +140,7 @@ class DataQualityInspectionPipelineServiceTest {
         assertThat(savedWrite!!.issues.single().suggestedTypeCode).isEqualTo(QualityIssueType.UNEXPECTED_NULL)
         assertThat(savedWrite!!.issues.single().inspectionCode)
             .isEqualTo("APISPORTS:FIXTURE_SINGLE:FIXTURE_STATUS:LONG_NULL")
-        assertThat(savedWrite!!.inspectionVersion).isEqualTo("V1")
+        assertThat(savedWrite!!.inspectionVersion).isEqualTo(37)
         val issue = savedResult!!.issues.single()
         assertThat(issue.issueInstanceId).matches("[0-9A-HJKMNP-TV-Z]{26}")
         assertThat(issue.confirmedTypeCode).isNull()
@@ -155,7 +160,7 @@ class DataQualityInspectionPipelineServiceTest {
             DataQualityInspectionPipelineService(
                 idempotencyChecker = { true },
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
-                qualityChecker = { _, _ ->
+                qualityChecker = qualityChecker { _, _ ->
                     listOf(
                         FoundIssue(
                             suggestedType = QualityIssueType.UNEXPECTED_RESPONSE,
@@ -168,6 +173,7 @@ class DataQualityInspectionPipelineServiceTest {
                         ),
                     )
                 },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = { write ->
                     savedWrite = write
                     NoopQualityResultStore().save(write)
@@ -188,7 +194,7 @@ class DataQualityInspectionPipelineServiceTest {
             DataQualityInspectionPipelineService(
                 idempotencyChecker = { true },
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
-                qualityChecker = { _, _ ->
+                qualityChecker = qualityChecker { _, _ ->
                     listOf(
                         FoundIssue(
                             suggestedType = QualityIssueType.INVALID_FORMAT,
@@ -200,6 +206,7 @@ class DataQualityInspectionPipelineServiceTest {
                         ),
                     )
                 },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = NoopQualityResultStore(),
                 resultPublisher = { },
                 clock = Clock.systemUTC(),
@@ -220,6 +227,19 @@ class DataQualityInspectionPipelineServiceTest {
             rawJsonObjectKey = "football-data/raw/example.json.gz",
             collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
         )
+
+    private fun qualityChecker(
+        inspectionVersion: Int = 37,
+        check: (QualityCheckRequest, JsonNode) -> List<FoundIssue>,
+    ): QualityChecker =
+        object : QualityChecker {
+            override val inspectionVersion: Int = inspectionVersion
+
+            override fun check(
+                request: QualityCheckRequest,
+                rawJson: JsonNode,
+            ): List<FoundIssue> = check(request, rawJson)
+        }
 
     private enum class TestRuleCode : InspectionRuleCode {
         LONG_NULL,

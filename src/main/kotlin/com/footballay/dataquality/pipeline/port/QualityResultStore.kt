@@ -27,6 +27,7 @@ class NoopQualityResultStore : QualityResultStore {
             parameters = write.parameters,
             canonicalHash = write.canonicalHash,
             rawJsonObjectKey = write.rawJsonObjectKey,
+            collectedAt = write.collectedAt,
             checkedAt = write.checkedAt,
             inspectionVersion = write.inspectionVersion,
             issues = issues,

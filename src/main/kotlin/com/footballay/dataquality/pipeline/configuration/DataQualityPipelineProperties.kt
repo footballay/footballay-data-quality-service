@@ -9,11 +9,16 @@ data class DataQualityPipelineProperties(
     val rawCollectedTopic: String = "football-data-raw-collected",
     val qualityResultTopic: String = "football-data-quality-result",
     val reader: Reader = Reader(),
+    val store: Store = Store(),
 ) {
     data class Reader(
         val type: RawResponseReaderType = RawResponseReaderType.NOOP,
         val mockDataResource: String = "classpath:mock/20260712T033403Z_Iq_XxagJ8LaiRo1Fy1M4oYRNxUhVIp8aOn9jJCmAGWY.json.gz",
         val localBaseDir: String? = null,
+    )
+
+    data class Store(
+        val type: QualityResultStoreType = QualityResultStoreType.MONGO,
     )
 }
 
@@ -21,4 +26,9 @@ enum class RawResponseReaderType {
     NOOP,
     MOCK_DATA,
     LOCAL_FILE,
+}
+
+enum class QualityResultStoreType {
+    MONGO,
+    NOOP,
 }

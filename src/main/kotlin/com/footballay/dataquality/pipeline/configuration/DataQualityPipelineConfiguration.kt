@@ -7,7 +7,6 @@ import com.footballay.dataquality.kafka.KafkaQualityResultPublisher
 import com.footballay.dataquality.pipeline.QualityChecker
 import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
 import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipeline
@@ -61,9 +60,6 @@ class DataQualityPipelineConfiguration {
 
     @Bean
     fun qualityChecker(processors: List<QualityInspectionProcessor>): QualityChecker = ProcessorRoutingQualityChecker(processors)
-
-    @Bean
-    fun qualityResultStore(): QualityResultStore = NoopQualityResultStore()
 
     @Bean
     fun qualityResultWriteMapper(): QualityResultWriteMapper = DefaultQualityResultWriteMapper()

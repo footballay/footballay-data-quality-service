@@ -33,6 +33,7 @@ import java.time.Instant
     properties = [
         "footballay.data-quality.pipeline.enabled=true",
         "footballay.data-quality.pipeline.reader.type=noop",
+        "footballay.data-quality.pipeline.store.type=noop",
     ],
 )
 class DataQualityKafkaFlowIntegrationTest {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.dataquality.inspection.ProcessorRoutingQualityChecker
 import com.footballay.dataquality.inspection.QualityInspectionProcessor
 import com.footballay.dataquality.kafka.KafkaQualityResultPublisher
+import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.QualityChecker
 import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
@@ -31,7 +32,15 @@ import java.time.Clock
 @ConditionalOnProperty(prefix = "footballay.data-quality.pipeline", name = ["enabled"], havingValue = "true")
 class DataQualityPipelineConfiguration {
     @Bean
-    fun rawEventIdempotencyChecker(): RawEventIdempotencyChecker = NoopRawEventIdempotencyChecker()
+    fun rawEventIdempotencyChecker(properties: DataQualityPipelineProperties): RawEventIdempotencyChecker =
+        if (properties.idempotency.enabled) {
+            CaffeineRawEventIdempotencyChecker(
+                ttl = properties.idempotency.ttl,
+                maximumSize = properties.idempotency.maximumSize,
+            )
+        } else {
+            NoopRawEventIdempotencyChecker()
+        }
 
     @Bean
     fun rawResponseReader(

@@ -23,11 +23,9 @@ class DataQualityInspectionPipelineService(
     private val log = logger()
 
     override fun process(event: RawCollectedEvent) {
-        try {
-            if (!idempotencyChecker.shouldProcess(event.rawEventId)) {
-                return
-            }
+        val claim = idempotencyChecker.tryClaim(event.rawEventId) ?: return
 
+        try {
             val rawJson = rawResponseReader.read(event.rawJsonObjectKey)
             val foundIssues = qualityChecker.check(event.toQualityCheckRequest(), rawJson)
             val savedResult =
@@ -40,7 +38,9 @@ class DataQualityInspectionPipelineService(
                     ),
                 )
             resultPublisher.publish(savedResult)
+            idempotencyChecker.complete(claim)
         } catch (exception: Exception) {
+            idempotencyChecker.release(claim)
             log.error(
                 "Data quality pipeline processing failed. rawEventId={}, provider={}, endpointKey={}",
                 event.rawEventId,

@@ -145,17 +145,62 @@ class DataQualityStandaloneE2ETest {
         assertThat(resultEvent.checkedAt.truncatedTo(ChronoUnit.MILLIS)).isEqualTo(resultDocument.checkedAt)
     }
 
+    @Test
+    fun `does not store or publish a completed raw event twice`() {
+        val event = event(rawEventId = "01K1E2E0000000000000000003", objectKey = NO_ISSUE_OBJECT_KEY)
+        writeFixture(NO_ISSUE_OBJECT_KEY)
+
+        outputConsumer().use { consumer ->
+            consumer.subscribe(listOf(OUTPUT_TOPIC))
+            awaitAssignment(consumer)
+
+            send(event)
+            pollOutputRecord(consumer, event.rawEventId)
+
+            send(event)
+            assertNoOutputRecord(consumer, event.rawEventId, DUPLICATE_RESULT_WAIT)
+        }
+
+        assertThat(mongoTemplate.getCollection(COLLECTION_NAME).countDocuments()).isEqualTo(1)
+    }
+
+    @Test
+    fun `reprocesses a raw event after local file reading fails`() {
+        val event = event(rawEventId = "01K1E2E0000000000000000004", objectKey = RETRY_OBJECT_KEY)
+
+        outputConsumer().use { consumer ->
+            consumer.subscribe(listOf(OUTPUT_TOPIC))
+            awaitAssignment(consumer)
+
+            send(event)
+            assertNoOutputRecord(consumer, event.rawEventId, FAILURE_RESULT_WAIT)
+
+            writeFixture(RETRY_OBJECT_KEY)
+            send(event)
+            val resultEvent = pollOutputRecord(consumer, event.rawEventId)
+
+            assertThat(objectMapper.readValue(resultEvent.value(), QualityResultEvent::class.java).rawEventId)
+                .isEqualTo(event.rawEventId)
+        }
+
+        assertThat(mongoTemplate.getCollection(COLLECTION_NAME).countDocuments()).isEqualTo(1)
+    }
+
     private fun publishAndConsume(event: RawCollectedEvent): QualityResultEvent =
         outputConsumer().use { consumer ->
             consumer.subscribe(listOf(OUTPUT_TOPIC))
             awaitAssignment(consumer)
 
-            kafkaTemplate.send(INPUT_TOPIC, event.rawEventId, objectMapper.writeValueAsString(event)).get()
+            send(event)
 
             val outputRecord = pollOutputRecord(consumer, event.rawEventId)
             assertThat(outputRecord.key()).isNotBlank()
             objectMapper.readValue(outputRecord.value(), QualityResultEvent::class.java)
         }
+
+    private fun send(event: RawCollectedEvent) {
+        kafkaTemplate.send(INPUT_TOPIC, event.rawEventId, objectMapper.writeValueAsString(event)).get()
+    }
 
     private fun outputConsumer(): KafkaConsumer<String, String> {
         val properties =
@@ -193,6 +238,21 @@ class DataQualityStandaloneE2ETest {
             }
         }
         error("No quality-result event was published for rawEventId=$rawEventId")
+    }
+
+    private fun assertNoOutputRecord(
+        consumer: KafkaConsumer<String, String>,
+        rawEventId: String,
+        timeout: Duration,
+    ) {
+        val deadline = System.nanoTime() + timeout.toNanos()
+        while (System.nanoTime() < deadline) {
+            val matchingRecord =
+                consumer.poll(POLL_DURATION).records(OUTPUT_TOPIC).firstOrNull { record ->
+                    objectMapper.readTree(record.value()).path("rawEventId").asText() == rawEventId
+                }
+            check(matchingRecord == null) { "Unexpected quality-result event for rawEventId=$rawEventId" }
+        }
     }
 
     private fun writeFixture(
@@ -237,9 +297,12 @@ class DataQualityStandaloneE2ETest {
         private const val NO_ISSUE_FIXTURE_RESOURCE = "example/fixture-single/fixture-single-1379192-no-issue.json"
         private const val NO_ISSUE_OBJECT_KEY = "raw/fixture-single-1379192-no-issue.json.gz"
         private const val VENUE_ID_ISSUE_OBJECT_KEY = "raw/fixture-single-1379192-venue-id-zero.json.gz"
+        private const val RETRY_OBJECT_KEY = "raw/fixture-single-1379192-retry.json.gz"
         private val POLL_DURATION = Duration.ofMillis(250)
         private val ASSIGNMENT_TIMEOUT = Duration.ofSeconds(10)
         private val RESULT_TIMEOUT = Duration.ofSeconds(15)
+        private val DUPLICATE_RESULT_WAIT = Duration.ofSeconds(2)
+        private val FAILURE_RESULT_WAIT = Duration.ofSeconds(1)
         private val localBaseDir: Path = Files.createTempDirectory("footballay-dq-e2e-")
 
         @Container

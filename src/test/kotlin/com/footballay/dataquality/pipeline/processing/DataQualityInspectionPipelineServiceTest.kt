@@ -14,6 +14,9 @@ import com.footballay.dataquality.pipeline.input.QualityCheckRequest
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
 import com.footballay.dataquality.pipeline.QualityChecker
+import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyClaim
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
 import com.footballay.dataquality.pipeline.result.QualityCheckStatus
 import com.footballay.dataquality.pipeline.result.QualityIssueCheckStatus
@@ -36,10 +39,7 @@ class DataQualityInspectionPipelineServiceTest {
         var checkedRequest: QualityCheckRequest? = null
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = {
-                    calls += "idempotency"
-                    true
-                },
+                idempotencyChecker = RecordingIdempotencyChecker(calls),
                 rawResponseReader = {
                     calls += "reader"
                     JsonNodeFactory.instance.objectNode()
@@ -63,7 +63,7 @@ class DataQualityInspectionPipelineServiceTest {
 
         pipeline.process(rawEvent())
 
-        assertThat(calls).containsExactly("idempotency", "reader", "checker", "store", "publisher")
+        assertThat(calls).containsExactly("tryClaim", "reader", "checker", "store", "publisher", "complete")
         assertThat(checkedRequest)
             .isEqualTo(
                 QualityCheckRequest(
@@ -85,9 +85,10 @@ class DataQualityInspectionPipelineServiceTest {
     @Test
     fun `does not continue when idempotency checker rejects the event`() {
         var readCalled = false
+        val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = { false },
+                idempotencyChecker = RecordingIdempotencyChecker(calls, allowClaim = false),
                 rawResponseReader = {
                     readCalled = true
                     JsonNodeFactory.instance.objectNode()
@@ -102,6 +103,64 @@ class DataQualityInspectionPipelineServiceTest {
         pipeline.process(rawEvent())
 
         assertThat(readCalled).isFalse()
+        assertThat(calls).containsExactly("tryClaim")
+    }
+
+    @Test
+    fun `releases the claim and rethrows when raw response reading fails`() {
+        val calls = mutableListOf<String>()
+        val pipeline =
+            DataQualityInspectionPipelineService(
+                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                rawResponseReader = {
+                    calls += "reader"
+                    throw IllegalStateException("Raw response is unavailable")
+                },
+                qualityChecker = qualityChecker { _, _ -> emptyList() },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
+                resultStore = NoopQualityResultStore(),
+                resultPublisher = { },
+                clock = Clock.systemUTC(),
+            )
+
+        org.assertj.core.api.Assertions.assertThatIllegalStateException()
+            .isThrownBy { pipeline.process(rawEvent()) }
+            .withMessage("Raw response is unavailable")
+
+        assertThat(calls).containsExactly("tryClaim", "reader", "release")
+    }
+
+    @Test
+    fun `releases the claim and rethrows when result publishing fails`() {
+        val calls = mutableListOf<String>()
+        val pipeline =
+            DataQualityInspectionPipelineService(
+                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                rawResponseReader = {
+                    calls += "reader"
+                    JsonNodeFactory.instance.objectNode()
+                },
+                qualityChecker = qualityChecker { _, _ ->
+                    calls += "checker"
+                    emptyList()
+                },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
+                resultStore = {
+                    calls += "store"
+                    NoopQualityResultStore().save(it)
+                },
+                resultPublisher = {
+                    calls += "publisher"
+                    throw IllegalStateException("Result publish failed")
+                },
+                clock = Clock.systemUTC(),
+            )
+
+        org.assertj.core.api.Assertions.assertThatIllegalStateException()
+            .isThrownBy { pipeline.process(rawEvent()) }
+            .withMessage("Result publish failed")
+
+        assertThat(calls).containsExactly("tryClaim", "reader", "checker", "store", "publisher", "release")
     }
 
     @Test
@@ -111,7 +170,7 @@ class DataQualityInspectionPipelineServiceTest {
         val checkedAt = Instant.parse("2026-07-13T00:00:00Z")
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = { true },
+                idempotencyChecker = NoopRawEventIdempotencyChecker(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -158,7 +217,7 @@ class DataQualityInspectionPipelineServiceTest {
         var savedWrite: QualityResultWrite? = null
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = { true },
+                idempotencyChecker = NoopRawEventIdempotencyChecker(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -192,7 +251,7 @@ class DataQualityInspectionPipelineServiceTest {
     fun `rejects an inspection rule code outside uppercase snake case`() {
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = { true },
+                idempotencyChecker = NoopRawEventIdempotencyChecker(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -240,6 +299,24 @@ class DataQualityInspectionPipelineServiceTest {
                 rawJson: JsonNode,
             ): List<FoundIssue> = check(request, rawJson)
         }
+
+    private class RecordingIdempotencyChecker(
+        private val calls: MutableList<String>,
+        private val allowClaim: Boolean = true,
+    ) : RawEventIdempotencyChecker {
+        override fun tryClaim(rawEventId: String): RawEventIdempotencyClaim? {
+            calls += "tryClaim"
+            return if (allowClaim) RawEventIdempotencyClaim(rawEventId, "test-owner") else null
+        }
+
+        override fun complete(claim: RawEventIdempotencyClaim) {
+            calls += "complete"
+        }
+
+        override fun release(claim: RawEventIdempotencyClaim) {
+            calls += "release"
+        }
+    }
 
     private enum class TestRuleCode : InspectionRuleCode {
         LONG_NULL,

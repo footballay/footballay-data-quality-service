@@ -1,6 +1,9 @@
 spring:
   application:
     name: footballay-data-quality-service
+  main:
+    web-application-type: none
+    keep-alive: true
   kafka:
     consumer:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer

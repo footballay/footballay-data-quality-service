@@ -1,0 +1,17 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/footballay_data_quality
+
+footballay:
+  data-quality:
+    pipeline:
+      enabled: true
+      consumer-group: footballay-data-quality-service-local
+      reader:
+        type: local_file
+        local-base-dir: ${FOOTBALLAY_DATA_QUALITY_PIPELINE_READER_LOCAL_BASE_DIR:/tmp/footballay-dq-smoke}
+      store:
+        type: mongo

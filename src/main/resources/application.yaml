@@ -26,6 +26,11 @@ footballay:
       reader:
         type: noop
         mock-data-resource: classpath:mock/20260712T033403Z_Iq_XxagJ8LaiRo1Fy1M4oYRNxUhVIp8aOn9jJCmAGWY.json.gz
-        local-base-dir: ${FOOTBALLAY_DATA_QUALITY_PIPELINE_READER_LOCAL_BASE_DIR:}
+        bucket: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET:}
+        region: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION:ap-northeast-2}
+        endpoint: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT:}
+        path-style-access-enabled: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_PATH_STYLE_ACCESS_ENABLED:false}
+        access-key: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ACCESS_KEY:}
+        secret-key: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_SECRET_KEY:}
       store:
         type: mongo

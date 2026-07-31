@@ -11,7 +11,12 @@ footballay:
       enabled: true
       consumer-group: footballay-data-quality-service-local
       reader:
-        type: local_file
-        local-base-dir: ${FOOTBALLAY_DATA_QUALITY_PIPELINE_READER_LOCAL_BASE_DIR:/tmp/footballay-dq-smoke}
+        type: s3
+        bucket: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET:footballay-data-quality-raw-local}
+        region: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION:ap-northeast-2}
+        endpoint: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT:http://localhost:9000}
+        path-style-access-enabled: true
+        access-key: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ACCESS_KEY:minioadmin}
+        secret-key: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_SECRET_KEY:minioadmin}
       store:
         type: mongo

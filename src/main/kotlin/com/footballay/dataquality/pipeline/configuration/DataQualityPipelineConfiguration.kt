@@ -14,17 +14,24 @@ import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipel
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipelineService
 import com.footballay.dataquality.pipeline.processing.DefaultQualityResultWriteMapper
 import com.footballay.dataquality.pipeline.processing.QualityResultWriteMapper
-import com.footballay.dataquality.pipeline.rawresponse.LocalFileRawResponseReader
 import com.footballay.dataquality.pipeline.rawresponse.MockDataRawResponseReader
 import com.footballay.dataquality.pipeline.rawresponse.NoopRawResponseReader
 import com.footballay.dataquality.pipeline.rawresponse.RawResponseReader
+import com.footballay.dataquality.pipeline.rawresponse.S3CompatibleRawResponseReader
+import org.springframework.beans.factory.ObjectProvider
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.ResourceLoader
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.core.KafkaTemplate
-import java.nio.file.Path
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.s3.S3Client
+import software.amazon.awssdk.services.s3.S3Configuration
+import java.net.URI
 import java.time.Clock
 
 @Configuration
@@ -47,6 +54,7 @@ class DataQualityPipelineConfiguration {
         properties: DataQualityPipelineProperties,
         objectMapper: ObjectMapper,
         resourceLoader: ResourceLoader,
+        dataQualityRawResponseS3Client: ObjectProvider<S3Client>,
     ): RawResponseReader =
         when (properties.reader.type) {
             RawResponseReaderType.NOOP -> NoopRawResponseReader()
@@ -55,16 +63,48 @@ class DataQualityPipelineConfiguration {
                     objectMapper = objectMapper,
                     resource = resourceLoader.getResource(properties.reader.mockDataResource),
                 )
-            RawResponseReaderType.LOCAL_FILE ->
-                LocalFileRawResponseReader(
+            RawResponseReaderType.S3 ->
+                S3CompatibleRawResponseReader(
                     objectMapper = objectMapper,
-                    baseDir = Path.of(requireLocalBaseDir(properties.reader.localBaseDir)),
+                    s3Client = requireNotNull(dataQualityRawResponseS3Client.ifAvailable),
+                    bucket = requireS3Bucket(properties.reader),
                 )
         }
 
-    private fun requireLocalBaseDir(localBaseDir: String?): String =
-        requireNotNull(localBaseDir?.takeIf { it.isNotBlank() }) {
-            "footballay.data-quality.pipeline.reader.local-base-dir is required for LOCAL_FILE reader"
+    @Bean
+    @ConditionalOnProperty(
+        prefix = "footballay.data-quality.pipeline.reader",
+        name = ["type"],
+        havingValue = "s3",
+    )
+    fun dataQualityRawResponseS3Client(properties: DataQualityPipelineProperties): S3Client {
+        val reader = properties.reader
+        requireS3Bucket(reader)
+        require(reader.region.isNotBlank()) {
+            "footballay.data-quality.pipeline.reader.region is required for S3 reader"
+        }
+        require((reader.accessKey.isNullOrBlank()) == (reader.secretKey.isNullOrBlank())) {
+            "footballay.data-quality.pipeline.reader.access-key and secret-key must be configured together"
+        }
+        val credentialsProvider =
+            if (reader.accessKey.isNullOrBlank()) {
+                DefaultCredentialsProvider.create()
+            } else {
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(reader.accessKey, reader.secretKey))
+            }
+        return S3Client.builder()
+            .region(Region.of(reader.region))
+            .credentialsProvider(credentialsProvider)
+            .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(reader.pathStyleAccessEnabled).build())
+            .apply {
+                reader.endpoint?.takeIf(String::isNotBlank)?.let { endpointOverride(URI.create(it)) }
+            }
+            .build()
+    }
+
+    private fun requireS3Bucket(reader: DataQualityPipelineProperties.Reader): String =
+        requireNotNull(reader.bucket.takeIf { it.isNotBlank() }) {
+            "footballay.data-quality.pipeline.reader.bucket is required for S3 reader"
         }
 
     @Bean

@@ -18,6 +18,7 @@ import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyCh
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyClaim
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
+import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.result.QualityCheckStatus
 import com.footballay.dataquality.pipeline.result.QualityIssueCheckStatus
 import com.footballay.dataquality.pipeline.result.QualityMaxSeverity
@@ -33,9 +34,9 @@ import java.time.ZoneOffset
 
 class DataQualityInspectionPipelineServiceTest {
     @Test
-    fun `processes a new raw event in pipeline order and publishes a no-issue result`() {
+    fun `processes a new raw event and requests publication after storage`() {
         val calls = mutableListOf<String>()
-        var published: QualityResult? = null
+        var saved: QualityResult? = null
         var checkedRequest: QualityCheckRequest? = null
         val pipeline =
             DataQualityInspectionPipelineService(
@@ -52,11 +53,11 @@ class DataQualityInspectionPipelineServiceTest {
                 qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
                 resultStore = {
                     calls += "store"
-                    NoopQualityResultStore().save(it)
+                    NoopQualityResultStore().save(it).also { result -> saved = result }
                 },
                 resultPublisher = {
                     calls += "publisher"
-                    published = it
+                    assertThat(it).isSameAs(saved)
                 },
                 clock = Clock.fixed(Instant.parse("2026-07-13T00:00:00Z"), ZoneOffset.UTC),
             )
@@ -73,13 +74,13 @@ class DataQualityInspectionPipelineServiceTest {
                     collectedAt = Instant.parse("2026-07-12T00:00:00Z"),
                 ),
             )
-        assertThat(published).isNotNull
-        assertThat(published!!.resultId).matches("[0-9A-HJKMNP-TV-Z]{26}")
-        assertThat(published!!.hasIssue).isFalse()
-        assertThat(published!!.issueCount).isZero()
-        assertThat(published!!.maxSeverity).isEqualTo(QualityMaxSeverity.NONE)
-        assertThat(published!!.checkStatus).isEqualTo(QualityCheckStatus.NO_ISSUE)
-        assertThat(published!!.inspectionVersion).isEqualTo(37)
+        assertThat(saved).isNotNull
+        assertThat(saved!!.resultId).matches("[0-9A-HJKMNP-TV-Z]{26}")
+        assertThat(saved!!.hasIssue).isFalse()
+        assertThat(saved!!.issueCount).isZero()
+        assertThat(saved!!.maxSeverity).isEqualTo(QualityMaxSeverity.NONE)
+        assertThat(saved!!.checkStatus).isEqualTo(QualityCheckStatus.NO_ISSUE)
+        assertThat(saved!!.inspectionVersion).isEqualTo(37)
     }
 
     @Test
@@ -131,7 +132,34 @@ class DataQualityInspectionPipelineServiceTest {
     }
 
     @Test
-    fun `releases the claim and rethrows when result publishing fails`() {
+    fun `does not request publication when result storage fails`() {
+        val calls = mutableListOf<String>()
+        val pipeline =
+            DataQualityInspectionPipelineService(
+                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                rawResponseReader = {
+                    calls += "reader"
+                    JsonNodeFactory.instance.objectNode()
+                },
+                qualityChecker = qualityChecker { _, _ ->
+                    calls += "checker"
+                    emptyList()
+                },
+                qualityResultWriteMapper = DefaultQualityResultWriteMapper(),
+                resultStore = { calls += "store"; throw IllegalStateException("MongoDB is unavailable") },
+                resultPublisher = { calls += "publisher" },
+                clock = Clock.systemUTC(),
+            )
+
+        org.assertj.core.api.Assertions.assertThatIllegalStateException()
+            .isThrownBy { pipeline.process(rawEvent()) }
+            .withMessage("MongoDB is unavailable")
+
+        assertThat(calls).containsExactly("tryClaim", "reader", "checker", "store", "release")
+    }
+
+    @Test
+    fun `completes idempotency when publication request throws`() {
         val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
@@ -151,16 +179,14 @@ class DataQualityInspectionPipelineServiceTest {
                 },
                 resultPublisher = {
                     calls += "publisher"
-                    throw IllegalStateException("Result publish failed")
+                    throw IllegalStateException("Kafka send start failed")
                 },
                 clock = Clock.systemUTC(),
             )
 
-        org.assertj.core.api.Assertions.assertThatIllegalStateException()
-            .isThrownBy { pipeline.process(rawEvent()) }
-            .withMessage("Result publish failed")
+        pipeline.process(rawEvent())
 
-        assertThat(calls).containsExactly("tryClaim", "reader", "checker", "store", "publisher", "release")
+        assertThat(calls).containsExactly("tryClaim", "reader", "checker", "store", "publisher", "complete")
     }
 
     @Test

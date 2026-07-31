@@ -15,8 +15,20 @@ class KafkaQualityResultPublisher(
     private val log = logger()
 
     override fun publish(result: QualityResult) {
-        val payload = objectMapper.writeValueAsString(result.toEvent())
-        kafkaTemplate.send(topic, result.resultId, payload).get()
-        log.info("Published quality-result event. resultId={}, rawEventId={}", result.resultId, result.rawEventId)
+        try {
+            val payload = objectMapper.writeValueAsString(result.toEvent())
+            kafkaTemplate.send(topic, result.resultId, payload).whenComplete { _, exception ->
+                if (exception == null) {
+                    log.info("Published quality-result event. resultId={}, rawEventId={}", result.resultId, result.rawEventId)
+                } else {
+                    log.error("Quality-result Kafka publication failed. {}", resultLogContext(result), exception)
+                }
+            }
+        } catch (exception: Exception) {
+            log.error("Quality-result Kafka publication could not be started. {}", resultLogContext(result), exception)
+        }
     }
+
+    private fun resultLogContext(result: QualityResult): String =
+        "resultId=${result.resultId}, rawEventId=${result.rawEventId}, provider=${result.provider}, endpointKey=${result.endpointKey}"
 }

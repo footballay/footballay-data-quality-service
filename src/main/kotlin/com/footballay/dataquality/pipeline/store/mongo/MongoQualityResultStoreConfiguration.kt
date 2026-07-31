@@ -19,7 +19,7 @@ class MongoQualityResultStoreConfiguration {
         havingValue = "MONGO",
         matchIfMissing = true,
     )
-    fun mongoQualityResultStore(mongoOperations: MongoOperations): QualityResultStore =
+    fun mongoQualityResultStore(mongoOperations: MongoOperations): MongoQualityResultStore =
         MongoQualityResultStore(mongoOperations)
 
     @Bean

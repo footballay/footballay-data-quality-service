@@ -53,7 +53,7 @@ import java.util.Properties
 import java.util.UUID
 import java.util.zip.GZIPOutputStream
 
-/** Kafka 수신부터 Mongo 저장과 결과 Kafka 발행까지 실제 DQ 서비스 흐름을 검증한다. */
+/** Kafka 수신, Mongo 저장, 비동기 결과 발행까지 실제 DQ 서비스 흐름을 검증한다. */
 @Testcontainers
 @SpringBootTest(
     properties = [

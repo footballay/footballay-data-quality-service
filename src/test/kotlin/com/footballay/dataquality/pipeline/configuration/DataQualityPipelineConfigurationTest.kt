@@ -5,6 +5,7 @@ import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventIdempoten
 import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
+import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
@@ -53,6 +54,15 @@ class DataQualityPipelineConfigurationTest {
         assertThatIllegalArgumentException()
             .isThrownBy { DataQualityPipelineProperties.Idempotency(maximumSize = 0) }
             .withMessage("Data quality pipeline idempotency maximumSize must be positive: 0")
+    }
+
+    @Test
+    fun `creates a Kafka quality result publisher without publication executors`() {
+        contextRunner.run { context ->
+            assertThat(context.getBean(QualityResultPublisher::class.java)).isNotNull
+            assertThat(context.containsBean("qualityResultPublicationExecutor")).isFalse()
+            assertThat(context.containsBean("qualityResultPublicationRetryTaskScheduler")).isFalse()
+        }
     }
 }
 

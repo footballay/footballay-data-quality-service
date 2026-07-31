@@ -9,6 +9,7 @@ import com.footballay.dataquality.pipeline.input.RawCollectedEvent
 import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
 import com.footballay.dataquality.pipeline.rawresponse.RawResponseReader
+import com.footballay.dataquality.pipeline.result.QualityResult
 import java.time.Clock
 
 class DataQualityInspectionPipelineService(
@@ -28,8 +29,7 @@ class DataQualityInspectionPipelineService(
         try {
             val rawJson = rawResponseReader.read(event.rawJsonObjectKey)
             val foundIssues = qualityChecker.check(event.toQualityCheckRequest(), rawJson)
-            val savedResult =
-                resultStore.save(
+            val savedResult = resultStore.save(
                     qualityResultWriteMapper.map(
                         event = event,
                         checkedAt = clock.instant(),
@@ -37,7 +37,7 @@ class DataQualityInspectionPipelineService(
                         foundIssues = foundIssues,
                     ),
                 )
-            resultPublisher.publish(savedResult)
+            publishResult(savedResult)
             idempotencyChecker.complete(claim)
         } catch (exception: Exception) {
             idempotencyChecker.release(claim)
@@ -49,6 +49,21 @@ class DataQualityInspectionPipelineService(
                 exception,
             )
             throw exception
+        }
+    }
+
+    private fun publishResult(result: QualityResult) {
+        try {
+            resultPublisher.publish(result)
+        } catch (exception: Exception) {
+            log.error(
+                "QualityResultPublisher unexpectedly threw while requesting publication. resultId={}, rawEventId={}, provider={}, endpointKey={}",
+                result.resultId,
+                result.rawEventId,
+                result.provider,
+                result.endpointKey,
+                exception,
+            )
         }
     }
 

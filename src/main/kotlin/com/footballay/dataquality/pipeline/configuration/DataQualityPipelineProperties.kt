@@ -42,6 +42,7 @@ data class DataQualityPipelineProperties(
     data class Store(
         val type: QualityResultStoreType = QualityResultStoreType.MONGO,
     )
+
 }
 
 enum class RawResponseReaderType {

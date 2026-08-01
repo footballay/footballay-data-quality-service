@@ -1,9 +1,9 @@
 package com.footballay.dataquality.pipeline.configuration
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventProcessingRegistry
+import com.footballay.dataquality.pipeline.idempotency.NoopRawEventProcessingRegistry
+import com.footballay.dataquality.pipeline.idempotency.RawEventProcessingRegistry
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
 import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
@@ -28,20 +28,20 @@ class DataQualityPipelineConfigurationTest {
             )
 
     @Test
-    fun `uses Caffeine idempotency checker by default`() {
+    fun `uses Caffeine processing registry by default`() {
         contextRunner.run { context ->
-            assertThat(context.getBean(RawEventIdempotencyChecker::class.java))
-                .isInstanceOf(CaffeineRawEventIdempotencyChecker::class.java)
+            assertThat(context.getBean(RawEventProcessingRegistry::class.java))
+                .isInstanceOf(CaffeineRawEventProcessingRegistry::class.java)
         }
     }
 
     @Test
-    fun `uses Noop idempotency checker when disabled`() {
+    fun `uses Noop processing registry when disabled`() {
         contextRunner
             .withPropertyValues("footballay.data-quality.pipeline.idempotency.enabled=false")
             .run { context ->
-                assertThat(context.getBean(RawEventIdempotencyChecker::class.java))
-                    .isInstanceOf(NoopRawEventIdempotencyChecker::class.java)
+                assertThat(context.getBean(RawEventProcessingRegistry::class.java))
+                    .isInstanceOf(NoopRawEventProcessingRegistry::class.java)
             }
     }
 

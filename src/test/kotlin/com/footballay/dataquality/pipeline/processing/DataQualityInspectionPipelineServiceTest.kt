@@ -14,9 +14,9 @@ import com.footballay.dataquality.pipeline.input.QualityCheckRequest
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
 import com.footballay.dataquality.pipeline.QualityChecker
-import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyClaim
+import com.footballay.dataquality.pipeline.idempotency.NoopRawEventProcessingRegistry
+import com.footballay.dataquality.pipeline.idempotency.RawEventProcessingRegistry
+import com.footballay.dataquality.pipeline.idempotency.RawEventProcessingClaim
 import com.footballay.dataquality.pipeline.port.NoopQualityResultStore
 import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.result.QualityCheckStatus
@@ -40,7 +40,7 @@ class DataQualityInspectionPipelineServiceTest {
         var checkedRequest: QualityCheckRequest? = null
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                processingRegistry = RecordingProcessingRegistry(calls),
                 rawResponseReader = {
                     calls += "reader"
                     JsonNodeFactory.instance.objectNode()
@@ -84,12 +84,12 @@ class DataQualityInspectionPipelineServiceTest {
     }
 
     @Test
-    fun `does not continue when idempotency checker rejects the event`() {
+    fun `does not continue when processing registry rejects the claim`() {
         var readCalled = false
         val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = RecordingIdempotencyChecker(calls, allowClaim = false),
+                processingRegistry = RecordingProcessingRegistry(calls, allowClaim = false),
                 rawResponseReader = {
                     readCalled = true
                     JsonNodeFactory.instance.objectNode()
@@ -112,7 +112,7 @@ class DataQualityInspectionPipelineServiceTest {
         val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                processingRegistry = RecordingProcessingRegistry(calls),
                 rawResponseReader = {
                     calls += "reader"
                     throw IllegalStateException("Raw response is unavailable")
@@ -136,7 +136,7 @@ class DataQualityInspectionPipelineServiceTest {
         val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                processingRegistry = RecordingProcessingRegistry(calls),
                 rawResponseReader = {
                     calls += "reader"
                     JsonNodeFactory.instance.objectNode()
@@ -159,11 +159,11 @@ class DataQualityInspectionPipelineServiceTest {
     }
 
     @Test
-    fun `completes idempotency when publication request throws`() {
+    fun `completes the processing claim when publication request throws`() {
         val calls = mutableListOf<String>()
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = RecordingIdempotencyChecker(calls),
+                processingRegistry = RecordingProcessingRegistry(calls),
                 rawResponseReader = {
                     calls += "reader"
                     JsonNodeFactory.instance.objectNode()
@@ -196,7 +196,7 @@ class DataQualityInspectionPipelineServiceTest {
         val checkedAt = Instant.parse("2026-07-13T00:00:00Z")
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = NoopRawEventIdempotencyChecker(),
+                processingRegistry = NoopRawEventProcessingRegistry(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -243,7 +243,7 @@ class DataQualityInspectionPipelineServiceTest {
         var savedWrite: QualityResultWrite? = null
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = NoopRawEventIdempotencyChecker(),
+                processingRegistry = NoopRawEventProcessingRegistry(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -277,7 +277,7 @@ class DataQualityInspectionPipelineServiceTest {
     fun `rejects an inspection rule code outside uppercase snake case`() {
         val pipeline =
             DataQualityInspectionPipelineService(
-                idempotencyChecker = NoopRawEventIdempotencyChecker(),
+                processingRegistry = NoopRawEventProcessingRegistry(),
                 rawResponseReader = { JsonNodeFactory.instance.objectNode() },
                 qualityChecker = qualityChecker { _, _ ->
                     listOf(
@@ -326,20 +326,20 @@ class DataQualityInspectionPipelineServiceTest {
             ): List<FoundIssue> = check(request, rawJson)
         }
 
-    private class RecordingIdempotencyChecker(
+    private class RecordingProcessingRegistry(
         private val calls: MutableList<String>,
         private val allowClaim: Boolean = true,
-    ) : RawEventIdempotencyChecker {
-        override fun tryClaim(rawEventId: String): RawEventIdempotencyClaim? {
+    ) : RawEventProcessingRegistry {
+        override fun tryClaim(rawEventId: String): RawEventProcessingClaim? {
             calls += "tryClaim"
-            return if (allowClaim) RawEventIdempotencyClaim(rawEventId, "test-owner") else null
+            return if (allowClaim) RawEventProcessingClaim(rawEventId, "test-owner") else null
         }
 
-        override fun complete(claim: RawEventIdempotencyClaim) {
+        override fun complete(claim: RawEventProcessingClaim) {
             calls += "complete"
         }
 
-        override fun release(claim: RawEventIdempotencyClaim) {
+        override fun release(claim: RawEventProcessingClaim) {
             calls += "release"
         }
     }

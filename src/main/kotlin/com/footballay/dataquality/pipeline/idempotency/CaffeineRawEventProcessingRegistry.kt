@@ -7,13 +7,14 @@ import java.time.Duration
 import java.util.UUID
 
 /**
- * 단일 인스턴스 서버에서 사용할 Caffeine 기반 중복 검사입니다. TTL 이내의 중복 처리를 방지합니다.
+ * 단일 인스턴스 서버에서 raw event의 처리 상태와 처리권을 관리합니다.
+ * TTL 이내에는 처리 중이거나 완료된 event의 재처리를 막고, TTL 이후에는 재처리를 허용합니다.
  */
-class CaffeineRawEventIdempotencyChecker(
+class CaffeineRawEventProcessingRegistry(
     ttl: Duration,
     maximumSize: Long,
     ticker: Ticker = Ticker.systemTicker(),
-) : RawEventIdempotencyChecker {
+) : RawEventProcessingRegistry {
     private val entries: Cache<String, Entry> =
         Caffeine
             .newBuilder()
@@ -22,9 +23,9 @@ class CaffeineRawEventIdempotencyChecker(
             .ticker(ticker)
             .build()
 
-    override fun tryClaim(rawEventId: String): RawEventIdempotencyClaim? {
+    override fun tryClaim(rawEventId: String): RawEventProcessingClaim? {
         val claim =
-            RawEventIdempotencyClaim(
+            RawEventProcessingClaim(
                 rawEventId = rawEventId,
                 ownerToken = UUID.randomUUID().toString(),
             )
@@ -32,11 +33,11 @@ class CaffeineRawEventIdempotencyChecker(
         return claim.takeIf { previous == null }
     }
 
-    override fun complete(claim: RawEventIdempotencyClaim) {
+    override fun complete(claim: RawEventProcessingClaim) {
         entries.asMap().replace(claim.rawEventId, InProgress(claim.ownerToken), Completed)
     }
 
-    override fun release(claim: RawEventIdempotencyClaim) {
+    override fun release(claim: RawEventProcessingClaim) {
         entries.asMap().remove(claim.rawEventId, InProgress(claim.ownerToken))
     }
 

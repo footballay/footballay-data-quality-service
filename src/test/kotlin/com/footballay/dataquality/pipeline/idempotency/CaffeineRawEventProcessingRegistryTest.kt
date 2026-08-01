@@ -5,7 +5,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import java.time.Duration
 
-class CaffeineRawEventIdempotencyCheckerTest {
+class CaffeineRawEventProcessingRegistryTest {
     @Test
     fun `rejects a second claim while the first claim is in progress`() {
         val checker = checker()
@@ -59,7 +59,7 @@ class CaffeineRawEventIdempotencyCheckerTest {
     private fun checker(
         ticker: Ticker = Ticker.systemTicker(),
     ) =
-        CaffeineRawEventIdempotencyChecker(
+        CaffeineRawEventProcessingRegistry(
             ttl = Duration.ofSeconds(1),
             maximumSize = 10,
             ticker = ticker,

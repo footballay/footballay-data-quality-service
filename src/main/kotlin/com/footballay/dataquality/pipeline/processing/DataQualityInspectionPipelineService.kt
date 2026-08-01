@@ -2,7 +2,7 @@ package com.footballay.dataquality.pipeline.processing
 
 import com.footballay.dataquality.logger
 import com.footballay.dataquality.pipeline.QualityChecker
-import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.RawEventProcessingRegistry
 import com.footballay.dataquality.pipeline.input.QualityCheckRequest
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
@@ -13,7 +13,7 @@ import com.footballay.dataquality.pipeline.result.QualityResult
 import java.time.Clock
 
 class DataQualityInspectionPipelineService(
-    private val idempotencyChecker: RawEventIdempotencyChecker,
+    private val processingRegistry: RawEventProcessingRegistry,
     private val rawResponseReader: RawResponseReader,
     private val qualityChecker: QualityChecker,
     private val qualityResultWriteMapper: QualityResultWriteMapper,
@@ -24,7 +24,7 @@ class DataQualityInspectionPipelineService(
     private val log = logger()
 
     override fun process(event: RawCollectedEvent) {
-        val claim = idempotencyChecker.tryClaim(event.rawEventId) ?: return
+        val claim = processingRegistry.tryClaim(event.rawEventId) ?: return
 
         try {
             val rawJson = rawResponseReader.read(event.rawJsonObjectKey)
@@ -38,9 +38,9 @@ class DataQualityInspectionPipelineService(
                     ),
                 )
             publishResult(savedResult)
-            idempotencyChecker.complete(claim)
+            processingRegistry.complete(claim)
         } catch (exception: Exception) {
-            idempotencyChecker.release(claim)
+            processingRegistry.release(claim)
             log.error(
                 "Data quality pipeline processing failed. rawEventId={}, provider={}, endpointKey={}",
                 event.rawEventId,

@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.footballay.dataquality.inspection.ProcessorRoutingQualityChecker
 import com.footballay.dataquality.inspection.QualityInspectionProcessor
 import com.footballay.dataquality.kafka.KafkaQualityResultPublisher
-import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.CaffeineRawEventProcessingRegistry
 import com.footballay.dataquality.pipeline.QualityChecker
-import com.footballay.dataquality.pipeline.idempotency.NoopRawEventIdempotencyChecker
-import com.footballay.dataquality.pipeline.idempotency.RawEventIdempotencyChecker
+import com.footballay.dataquality.pipeline.idempotency.NoopRawEventProcessingRegistry
+import com.footballay.dataquality.pipeline.idempotency.RawEventProcessingRegistry
 import com.footballay.dataquality.pipeline.port.QualityResultPublisher
 import com.footballay.dataquality.pipeline.port.QualityResultStore
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipeline
@@ -39,14 +39,14 @@ import java.time.Clock
 @ConditionalOnProperty(prefix = "footballay.data-quality.pipeline", name = ["enabled"], havingValue = "true")
 class DataQualityPipelineConfiguration {
     @Bean
-    fun rawEventIdempotencyChecker(properties: DataQualityPipelineProperties): RawEventIdempotencyChecker =
+    fun rawEventProcessingRegistry(properties: DataQualityPipelineProperties): RawEventProcessingRegistry =
         if (properties.idempotency.enabled) {
-            CaffeineRawEventIdempotencyChecker(
+            CaffeineRawEventProcessingRegistry(
                 ttl = properties.idempotency.ttl,
                 maximumSize = properties.idempotency.maximumSize,
             )
         } else {
-            NoopRawEventIdempotencyChecker()
+            NoopRawEventProcessingRegistry()
         }
 
     @Bean
@@ -127,7 +127,7 @@ class DataQualityPipelineConfiguration {
 
     @Bean
     fun dataQualityInspectionPipeline(
-        idempotencyChecker: RawEventIdempotencyChecker,
+        processingRegistry: RawEventProcessingRegistry,
         rawResponseReader: RawResponseReader,
         qualityChecker: QualityChecker,
         qualityResultWriteMapper: QualityResultWriteMapper,
@@ -135,7 +135,7 @@ class DataQualityPipelineConfiguration {
         resultPublisher: QualityResultPublisher,
     ): DataQualityInspectionPipeline =
         DataQualityInspectionPipelineService(
-            idempotencyChecker = idempotencyChecker,
+            processingRegistry = processingRegistry,
             rawResponseReader = rawResponseReader,
             qualityChecker = qualityChecker,
             qualityResultWriteMapper = qualityResultWriteMapper,

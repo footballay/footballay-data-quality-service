@@ -12,6 +12,7 @@ import com.footballay.dataquality.pipeline.result.QualityMaxSeverity
 import com.footballay.dataquality.pipeline.result.QualityResultEvent
 import com.footballay.dataquality.pipeline.store.mongo.QualityResultArchiveStatus
 import com.footballay.dataquality.pipeline.store.mongo.QualityResultDocument
+import com.footballay.dataquality.support.SeaweedFsMiniContainer
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.admin.NewTopic
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -32,7 +33,6 @@ import org.springframework.kafka.test.utils.ContainerTestUtils
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.MongoDBContainer
-import org.testcontainers.containers.GenericContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.kafka.ConfluentKafkaContainer
@@ -278,7 +278,7 @@ class DataQualityStandaloneE2ETest {
                 output.toByteArray()
             }
         s3Client().putObject(
-            PutObjectRequest.builder().bucket(MINIO_BUCKET).key(objectKey).build(),
+            PutObjectRequest.builder().bucket(RAW_S3_BUCKET).key(objectKey).build(),
             RequestBody.fromBytes(gzipBytes),
         )
     }
@@ -316,9 +316,7 @@ class DataQualityStandaloneE2ETest {
         private val RESULT_TIMEOUT = Duration.ofSeconds(15)
         private val DUPLICATE_RESULT_WAIT = Duration.ofSeconds(2)
         private val FAILURE_RESULT_WAIT = Duration.ofSeconds(1)
-        private const val MINIO_BUCKET = "footballay-data-quality-raw-test"
-        private const val MINIO_ACCESS_KEY = "minioadmin"
-        private const val MINIO_SECRET_KEY = "minioadmin"
+        private const val RAW_S3_BUCKET = "footballay-data-quality-raw-test"
 
         @Container
         @JvmStatic
@@ -330,12 +328,12 @@ class DataQualityStandaloneE2ETest {
 
         @Container
         @JvmStatic
-        private val minio = MinioContainer()
+        private val seaweedFs = SeaweedFsMiniContainer()
 
         @BeforeAll
         @JvmStatic
         fun createTopicsAndWaitForListener() {
-            s3Client().use { it.createBucket(CreateBucketRequest.builder().bucket(MINIO_BUCKET).build()) }
+            s3Client().use { it.createBucket(CreateBucketRequest.builder().bucket(RAW_S3_BUCKET).build()) }
             AdminClient.create(mapOf("bootstrap.servers" to kafka.bootstrapServers)).use { adminClient ->
                 adminClient
                     .createTopics(
@@ -361,12 +359,12 @@ class DataQualityStandaloneE2ETest {
         fun configureInfrastructure(registry: DynamicPropertyRegistry) {
             registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers)
             registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl)
-            registry.add("footballay.data-quality.pipeline.reader.bucket") { MINIO_BUCKET }
+            registry.add("footballay.data-quality.pipeline.reader.bucket") { RAW_S3_BUCKET }
             registry.add("footballay.data-quality.pipeline.reader.region") { "ap-northeast-2" }
-            registry.add("footballay.data-quality.pipeline.reader.endpoint") { minioEndpoint() }
+            registry.add("footballay.data-quality.pipeline.reader.endpoint") { seaweedFs.endpoint() }
             registry.add("footballay.data-quality.pipeline.reader.path-style-access-enabled") { true }
-            registry.add("footballay.data-quality.pipeline.reader.access-key") { MINIO_ACCESS_KEY }
-            registry.add("footballay.data-quality.pipeline.reader.secret-key") { MINIO_SECRET_KEY }
+            registry.add("footballay.data-quality.pipeline.reader.access-key") { SeaweedFsMiniContainer.ACCESS_KEY }
+            registry.add("footballay.data-quality.pipeline.reader.secret-key") { SeaweedFsMiniContainer.SECRET_KEY }
             registry.add("footballay.data-quality.pipeline.raw-collected-topic") { INPUT_TOPIC }
             registry.add("footballay.data-quality.pipeline.quality-result-topic") { OUTPUT_TOPIC }
             registry.add("footballay.data-quality.pipeline.consumer-group") { "data-quality-e2e-input" }
@@ -377,23 +375,11 @@ class DataQualityStandaloneE2ETest {
                 .region(Region.of("ap-northeast-2"))
                 .credentialsProvider(
                     StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(MINIO_ACCESS_KEY, MINIO_SECRET_KEY),
+                        AwsBasicCredentials.create(SeaweedFsMiniContainer.ACCESS_KEY, SeaweedFsMiniContainer.SECRET_KEY),
                     ),
-                ).endpointOverride(java.net.URI.create(minioEndpoint()))
+                ).endpointOverride(java.net.URI.create(seaweedFs.endpoint()))
                 .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
                 .build()
 
-        private fun minioEndpoint(): String = "http://${minio.host}:${minio.getMappedPort(9000)}"
-    }
-}
-
-private class MinioContainer : GenericContainer<MinioContainer>(
-    DockerImageName.parse("minio/minio:RELEASE.2025-04-22T22-12-26Z"),
-) {
-    init {
-        withEnv("MINIO_ROOT_USER", "minioadmin")
-        withEnv("MINIO_ROOT_PASSWORD", "minioadmin")
-        withCommand("server", "/data")
-        withExposedPorts(9000)
     }
 }

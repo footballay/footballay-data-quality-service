@@ -11,10 +11,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test
 import org.springframework.boot.context.properties.EnableConfigurationProperties
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.context.runner.ApplicationContextRunner
 import org.springframework.context.annotation.Bean
 import org.springframework.kafka.core.KafkaTemplate
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
+import software.amazon.awssdk.services.s3.S3Client
 import org.mockito.Mockito.mock
 import java.time.Duration
 
@@ -63,6 +67,50 @@ class DataQualityPipelineConfigurationTest {
             assertThat(context.containsBean("qualityResultPublicationExecutor")).isFalse()
             assertThat(context.containsBean("qualityResultPublicationRetryTaskScheduler")).isFalse()
         }
+    }
+
+    @Test
+    fun `starts the production S3 pipeline configuration with required properties`() {
+        ApplicationContextRunner()
+            .withInitializer(ConfigDataApplicationContextInitializer())
+            .withUserConfiguration(DataQualityPipelineConfiguration::class.java, PipelineTestConfiguration::class.java)
+            .withPropertyValues(
+                "spring.profiles.active=prod",
+                "FOOTBALLAY_MONGODB_URI=mongodb://test-host/test-database",
+                "AIVEN_KAFKA_BOOTSTRAP_SERVERS=test-host:9092",
+                "AIVEN_KAFKA_CA_PATH=/tmp/aiven-ca.pem",
+                "AIVEN_KAFKA_DQ_USERNAME=test-user",
+                "AIVEN_KAFKA_DQ_PASSWORD=test-password",
+                "FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET=production-raw-bucket",
+            ).run { context ->
+                val properties = context.getBean(DataQualityPipelineProperties::class.java)
+
+                assertThat(context.startupFailure).isNull()
+                assertThat(context).hasSingleBean(S3Client::class.java)
+                assertThat(properties.enabled).isTrue()
+                assertThat(properties.reader.type).isEqualTo(RawResponseReaderType.S3)
+                assertThat(properties.store.type).isEqualTo(QualityResultStoreType.MONGO)
+                assertThat(properties.reader.bucket).isEqualTo("production-raw-bucket")
+                assertThat(properties.reader.region).isEqualTo("ap-northeast-2")
+            }
+    }
+
+    @Test
+    fun `uses default credentials when S3 static credentials are absent`() {
+        assertThat(s3CredentialsProvider(DataQualityPipelineProperties.Reader()))
+            .isInstanceOf(DefaultCredentialsProvider::class.java)
+    }
+
+    @Test
+    fun `uses static credentials for local S3-compatible storage`() {
+        assertThat(
+            s3CredentialsProvider(
+                DataQualityPipelineProperties.Reader(
+                    accessKey = "local-access-key",
+                    secretKey = "local-secret-key",
+                ),
+            ),
+        ).isInstanceOf(StaticCredentialsProvider::class.java)
     }
 }
 

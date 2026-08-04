@@ -1,4 +1,7 @@
 spring:
+  data:
+    mongodb:
+      uri: ${FOOTBALLAY_MONGODB_URI}
   kafka:
     security:
       protocol: SASL_SSL
@@ -9,6 +12,19 @@ spring:
       sasl.mechanism: SCRAM-SHA-256
       sasl.jaas.config: >-
         org.apache.kafka.common.security.scram.ScramLoginModule required
-        username="${AIVEN_KAFKA_CORE_USERNAME}"
-        password="${AIVEN_KAFKA_CORE_PASSWORD}";
+        username="${AIVEN_KAFKA_DQ_USERNAME}"
+        password="${AIVEN_KAFKA_DQ_PASSWORD}";
     bootstrap-servers: ${AIVEN_KAFKA_BOOTSTRAP_SERVERS}
+
+footballay:
+  data-quality:
+    pipeline:
+      enabled: true
+      reader:
+        type: s3
+        bucket: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET}
+        region: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION:ap-northeast-2}
+        endpoint: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT:}
+        path-style-access-enabled: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_PATH_STYLE_ACCESS_ENABLED:false}
+      store:
+        type: mongo

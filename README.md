@@ -1,0 +1,27 @@
+# footballay-data-quality-service
+
+## 운영 환경변수
+
+운영 환경에서는 `SPRING_PROFILES_ACTIVE=prod`를 설정한다.
+
+필수 환경변수.
+
+- `FOOTBALLAY_MONGODB_URI`.
+- `AIVEN_KAFKA_BOOTSTRAP_SERVERS`.
+- `AIVEN_KAFKA_CA_PATH`.
+- `AIVEN_KAFKA_DQ_USERNAME`.
+- `AIVEN_KAFKA_DQ_PASSWORD`.
+- `FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET`.
+
+선택 환경변수와 기본값.
+
+- `FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION`: `ap-northeast-2`.
+- `FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT`: 비어 있으면 AWS S3 기본 endpoint를 사용한다.
+- `FOOTBALLAY_DATA_QUALITY_RAW_S3_PATH_STYLE_ACCESS_ENABLED`: `false`.
+- `FOOTBALLAY_DATA_QUALITY_FIXTURE_SINGLE_LINEUP_AVAILABILITY_NOT_STARTED_GRACE_MINUTES`: `3`.
+
+prod 프로필에서는 `FOOTBALLAY_DATA_QUALITY_RAW_S3_ACCESS_KEY` 및
+`FOOTBALLAY_DATA_QUALITY_RAW_S3_SECRET_KEY`를 사용하지 않는다. S3 인증은 AWS SDK의
+`DefaultCredentialsProvider`가 제공하는 배포 환경의 credential source를 사용한다.
+
+`AIVEN_KAFKA_CA_PATH`는 컨테이너 또는 실행 환경에 읽기 전용으로 mount한 Aiven CA PEM 파일을 가리켜야 한다.

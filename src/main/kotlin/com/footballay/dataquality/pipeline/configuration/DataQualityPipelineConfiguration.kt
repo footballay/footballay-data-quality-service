@@ -26,6 +26,7 @@ import org.springframework.core.io.ResourceLoader
 import org.springframework.kafka.annotation.EnableKafka
 import org.springframework.kafka.core.KafkaTemplate
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.regions.Region
@@ -86,15 +87,9 @@ class DataQualityPipelineConfiguration {
         require((reader.accessKey.isNullOrBlank()) == (reader.secretKey.isNullOrBlank())) {
             "footballay.data-quality.pipeline.reader.access-key and secret-key must be configured together"
         }
-        val credentialsProvider =
-            if (reader.accessKey.isNullOrBlank()) {
-                DefaultCredentialsProvider.create()
-            } else {
-                StaticCredentialsProvider.create(AwsBasicCredentials.create(reader.accessKey, reader.secretKey))
-            }
         return S3Client.builder()
             .region(Region.of(reader.region))
-            .credentialsProvider(credentialsProvider)
+            .credentialsProvider(s3CredentialsProvider(reader))
             .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(reader.pathStyleAccessEnabled).build())
             .apply {
                 reader.endpoint?.takeIf(String::isNotBlank)?.let { endpointOverride(URI.create(it)) }
@@ -144,3 +139,10 @@ class DataQualityPipelineConfiguration {
             clock = Clock.systemUTC(),
         )
 }
+
+internal fun s3CredentialsProvider(reader: DataQualityPipelineProperties.Reader): AwsCredentialsProvider =
+    if (reader.accessKey.isNullOrBlank()) {
+        DefaultCredentialsProvider.create()
+    } else {
+        StaticCredentialsProvider.create(AwsBasicCredentials.create(reader.accessKey, reader.secretKey))
+    }

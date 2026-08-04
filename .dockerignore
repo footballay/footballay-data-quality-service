@@ -2,7 +2,10 @@
 .gitignore
 .idea
 .gradle
-build
+build/*
+!build/docker/
+build/docker/*
+!build/docker/application.jar
 plan
 code-dump.md
 

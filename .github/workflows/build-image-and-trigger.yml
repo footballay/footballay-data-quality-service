@@ -1,0 +1,143 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/footballay/footballay-data-quality-service
+
+jobs:
+  build-test:
+    name: Test and bootJar
+    runs-on: ubuntu-latest
+
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare image metadata
+        id: meta
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          timestamp="$(date -u +%Y%m%d-%H%M%S)"
+          image_tag="${timestamp}-${short_sha}"
+
+          echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "image=${IMAGE_NAME}:${image_tag}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Run tests
+        run: ./gradlew test --build-cache
+
+      - name: Build bootJar
+        run: ./gradlew bootJar --build-cache
+
+      - name: Prepare Docker application JAR
+        shell: bash
+        run: |
+          shopt -s nullglob
+          jars=()
+          for jar in build/libs/*.jar; do
+            [[ "$jar" == *-plain.jar ]] || jars+=("$jar")
+          done
+
+          if [[ "${#jars[@]}" -ne 1 ]]; then
+            echo "Expected exactly one executable bootJar, found ${#jars[@]}." >&2
+            printf 'Candidates:\n%s\n' "${jars[*]:-<none>}" >&2
+            exit 1
+          fi
+
+          mkdir -p build/docker
+          cp "${jars[0]}" build/docker/application.jar
+          test -s build/docker/application.jar
+          ls -lh build/docker/application.jar
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-html-report
+          path: build/reports/tests/test
+          if-no-files-found: ignore
+
+      - name: Upload Docker application JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-application-jar
+          path: build/docker/application.jar
+          if-no-files-found: error
+
+  docker-build-push:
+    name: Build and push Docker image
+    runs-on: ubuntu-latest
+    needs: build-test
+
+    outputs:
+      image: ${{ needs.build-test.outputs.image }}
+      image_tag: ${{ needs.build-test.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Docker application JAR
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-application-jar
+          path: build/docker
+
+      - name: Verify Docker application JAR
+        run: |
+          test -s build/docker/application.jar
+          ls -lh build/docker/application.jar
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ needs.build-test.outputs.image }}
+            ${{ env.IMAGE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Write summary
+        run: |
+          {
+            echo "## Docker image pushed"
+            echo ""
+            echo "- Image: \`${{ needs.build-test.outputs.image }}\`"
+            echo "- Tag: \`${{ needs.build-test.outputs.image_tag }}\`"
+            echo "- Commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

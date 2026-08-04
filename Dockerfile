@@ -2,22 +2,6 @@
 
 ARG IMAGE_PLATFORM=linux/amd64
 
-FROM --platform=${IMAGE_PLATFORM} gradle:8.14.3-jdk17 AS build
-
-WORKDIR /workspace
-
-COPY gradlew build.gradle settings.gradle ./
-COPY gradle ./gradle
-RUN chmod +x gradlew
-
-COPY . .
-
-RUN --mount=type=cache,target=/home/gradle/.gradle \
-    ./gradlew --no-daemon clean bootJar \
-    && jar_file="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit)" \
-    && test -n "$jar_file" \
-    && cp "$jar_file" /tmp/application.jar
-
 FROM --platform=${IMAGE_PLATFORM} amazonlinux:2023 AS aws-signing-helper
 
 ARG AWS_SIGNING_HELPER_VERSION=1.8.4
@@ -39,8 +23,9 @@ RUN groupadd --system --gid 10001 footballay \
 WORKDIR /app
 
 COPY --from=aws-signing-helper /usr/local/bin/aws_signing_helper /usr/local/bin/aws_signing_helper
-COPY --from=build /tmp/application.jar /app/application.jar
 
 USER footballay
+
+COPY build/docker/application.jar /app/application.jar
 
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]

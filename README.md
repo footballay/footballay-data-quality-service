@@ -32,6 +32,18 @@ prod 프로필에서는 `FOOTBALLAY_DATA_QUALITY_RAW_S3_ACCESS_KEY` 및
 
 `aws_signing_helper`는 AWS IAM Roles Anywhere 공식 Linux X86_64 artifact 1.8.4를 사용한다. 실제 helper binary를 `/usr/local/bin/aws_signing_helper`에 직접 설치하고 SHA-256 `b7568acd6e1517a4e1adaee68d52bfd6284a0e5305677166cd83d43a07c815c9`을 검증한다. 버전은 `aws_signing_helper version`으로 확인한다.
 
+Gradle 테스트와 실행 JAR 생성은 GitHub Actions가 담당한다. Dockerfile은 CI artifact인 `build/docker/application.jar`와 `aws_signing_helper`만 runtime 이미지로 조립한다. Gradle 의존성 및 build cache는 `gradle/actions/setup-gradle@v4`와 Gradle의 `--build-cache`가 관리하고, Docker layer cache는 Buildx의 GitHub Actions cache(`type=gha`)가 관리한다. Dockerfile에는 Gradle build stage 또는 Gradle cache mount를 두지 않는다.
+
+로컬에서 Docker 이미지를 검증하려면 먼저 실행 가능한 non-plain bootJar를 고정 경로에 준비한다.
+
+```sh
+./gradlew test bootJar
+mkdir -p build/docker
+jar_file="$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit)"
+test -n "$jar_file"
+cp "$jar_file" build/docker/application.jar
+```
+
 ```sh
 docker build --platform linux/amd64 \
   --build-arg AWS_SIGNING_HELPER_VERSION=1.8.4 \

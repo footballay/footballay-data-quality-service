@@ -6,7 +6,7 @@ spring:
     security:
       protocol: SASL_SSL
     ssl:
-      trust-store-location: file:${AIVEN_KAFKA_CA_PATH}
+      trust-store-location: file:${AIVEN_KAFKA_CA_PATH:/run/secrets/aiven-kafka-ca.pem}
       trust-store-type: PEM
     properties:
       sasl.mechanism: SCRAM-SHA-256
@@ -19,10 +19,10 @@ spring:
 footballay:
   data-quality:
     pipeline:
-      enabled: true
+      enabled: ${FOOTBALLAY_DATA_QUALITY_PIPELINE_ENABLED:false}
       reader:
         type: s3
-        bucket: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET}
+        bucket: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET:footballay-data-quality}
         region: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION:ap-northeast-2}
         endpoint: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT:}
         path-style-access-enabled: ${FOOTBALLAY_DATA_QUALITY_RAW_S3_PATH_STYLE_ACCESS_ENABLED:false}

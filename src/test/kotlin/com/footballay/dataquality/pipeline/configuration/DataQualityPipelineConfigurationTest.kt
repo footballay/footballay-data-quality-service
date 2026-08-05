@@ -81,6 +81,7 @@ class DataQualityPipelineConfigurationTest {
                 "AIVEN_KAFKA_CA_PATH=/tmp/aiven-ca.pem",
                 "AIVEN_KAFKA_DQ_USERNAME=test-user",
                 "AIVEN_KAFKA_DQ_PASSWORD=test-password",
+                "FOOTBALLAY_DATA_QUALITY_PIPELINE_ENABLED=true",
                 "FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET=production-raw-bucket",
             ).run { context ->
                 val properties = context.getBean(DataQualityPipelineProperties::class.java)

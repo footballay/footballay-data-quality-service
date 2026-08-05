@@ -21,16 +21,23 @@ class MongoDbProfileConfigurationTest {
     }
 
     @Test
-    fun `production profile enables the S3 Mongo pipeline without static S3 credentials`() {
+    fun `production profile configures the S3 Mongo pipeline with first deployment defaults`() {
         val prodProperties = properties("application-prod.yml")
 
-        assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.enabled")).isEqualTo("true")
+        assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.enabled"))
+            .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_PIPELINE_ENABLED:false}")
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.type")).isEqualTo("s3")
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.store.type")).isEqualTo("mongo")
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.bucket"))
-            .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET}")
+            .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_RAW_S3_BUCKET:footballay-data-quality}")
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.region"))
             .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_RAW_S3_REGION:ap-northeast-2}")
+        assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.endpoint"))
+            .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_RAW_S3_ENDPOINT:}")
+        assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.path-style-access-enabled"))
+            .isEqualTo("\${FOOTBALLAY_DATA_QUALITY_RAW_S3_PATH_STYLE_ACCESS_ENABLED:false}")
+        assertThat(prodProperties.getProperty("spring.kafka.ssl.trust-store-location"))
+            .isEqualTo("file:\${AIVEN_KAFKA_CA_PATH:/run/secrets/aiven-kafka-ca.pem}")
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.access-key")).isNull()
         assertThat(prodProperties.getProperty("footballay.data-quality.pipeline.reader.secret-key")).isNull()
     }

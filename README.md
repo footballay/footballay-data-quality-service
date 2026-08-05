@@ -34,6 +34,12 @@ prod 프로필에서는 `FOOTBALLAY_DATA_QUALITY_RAW_S3_ACCESS_KEY` 및
 
 Gradle 테스트와 실행 JAR 생성은 GitHub Actions가 담당한다. Dockerfile은 CI artifact인 `build/docker/application.jar`와 `aws_signing_helper`만 runtime 이미지로 조립한다. Gradle 의존성 및 build cache는 `gradle/actions/setup-gradle@v4`와 Gradle의 `--build-cache`가 관리하고, Docker layer cache는 Buildx의 GitHub Actions cache(`type=gha`)가 관리한다. Dockerfile에는 Gradle build stage 또는 Gradle cache mount를 두지 않는다.
 
+## GitHub Actions 배포 트리거.
+
+`Build and Push Docker Image` workflow는 immutable GHCR 이미지를 push한 뒤 `footballay/footballay-data-quality-service-action` 저장소의 `deploy.yml` workflow를 `main` ref로 dispatch한다. 전달하는 `image` input은 push한 immutable 이미지 전체 주소다.
+
+이 workflow를 실행하려면 이 저장소의 GitHub Actions repository secret으로 `DQ_DEPLOY_DISPATCH_TOKEN`을 설정한다. 토큰에는 대상 저장소의 workflow dispatch 권한이 필요하다.
+
 로컬에서 Docker 이미지를 검증하려면 먼저 실행 가능한 non-plain bootJar를 고정 경로에 준비한다.
 
 ```sh

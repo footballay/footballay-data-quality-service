@@ -16,6 +16,19 @@ spring:
         password="${AIVEN_KAFKA_DQ_PASSWORD}";
     bootstrap-servers: ${AIVEN_KAFKA_BOOTSTRAP_SERVERS}
 
+management:
+  server:
+    port: 9001
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+loki:
+  url: ${LOKI_URL}
+  username: ${LOKI_USERNAME}
+  password: ${LOKI_PASSWORD}
+
 footballay:
   data-quality:
     pipeline:

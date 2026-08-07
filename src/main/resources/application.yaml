@@ -2,7 +2,6 @@ spring:
   application:
     name: footballay-data-quality-service
   main:
-    web-application-type: none
     keep-alive: true
   kafka:
     consumer:
@@ -12,6 +11,15 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  metrics:
+    enable:
+      mongodb: false
+  prometheus:
+    metrics:
+      export:
+        enabled: true
 
 footballay:
   data-quality:

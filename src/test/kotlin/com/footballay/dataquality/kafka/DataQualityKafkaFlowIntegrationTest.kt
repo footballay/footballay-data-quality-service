@@ -6,6 +6,8 @@ import com.footballay.dataquality.pipeline.input.DataProvider
 import com.footballay.dataquality.pipeline.input.QualityParameter
 import com.footballay.dataquality.pipeline.input.RawCollectedEvent
 import com.footballay.dataquality.pipeline.processing.DataQualityInspectionPipeline
+import io.micrometer.core.instrument.MeterRegistry
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.timeout
@@ -46,6 +48,9 @@ class DataQualityKafkaFlowIntegrationTest {
     @Autowired
     private lateinit var inspectionPipeline: DataQualityInspectionPipeline
 
+    @Autowired
+    private lateinit var meterRegistry: MeterRegistry
+
     @Suppress("SpringJavaInjectionPointsAutowiringInspection")
     @Autowired
     private lateinit var kafkaListenerEndpointRegistry: KafkaListenerEndpointRegistry
@@ -68,6 +73,9 @@ class DataQualityKafkaFlowIntegrationTest {
         kafkaTemplate.send("football-data-raw-collected", event.rawEventId, objectMapper.writeValueAsString(event)).get()
 
         verify(inspectionPipeline, timeout(5_000)).process(event)
+
+        assertThat(meterRegistry.meters.map { it.id.name })
+            .anyMatch { it.startsWith("kafka.consumer") }
     }
 }
 

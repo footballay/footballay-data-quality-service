@@ -10,5 +10,5 @@ import org.testcontainers.utility.DockerImageName
 class TestcontainersConfiguration {
     @Bean
     @ServiceConnection
-    fun kafkaContainer(): KafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka-native:latest"))
+    fun kafkaContainer(): KafkaContainer = KafkaContainer(DockerImageName.parse("apache/kafka-native:4.2.1"))
 }

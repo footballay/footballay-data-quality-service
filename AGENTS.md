@@ -98,7 +98,9 @@ These rules bias toward caution over speed. For trivial tasks, use judgment.
 * Do not paste or load huge logs into context.
 * Inspect logs with `rg`, `grep`, `tail`, or `sed`.
 * Do not rely only on summarized output when investigating test, database, messaging, or integration failures.
-* Run the full suite only when needed or explicitly requested.
+* Run the full suite only when needed or explicitly requested.  
+* Git should not track code dump file.  
+* If a `plan/` directory exists at the project root and is ignored by Git, write code dumps there.  
 
 ## Context notes for large tasks
 

@@ -8,7 +8,12 @@ import com.footballay.dataquality.inspection.InspectionSeverity
 import com.footballay.dataquality.inspection.QualityInspector
 import com.footballay.dataquality.inspection.QualityIssueType
 
-/** API Sports Fixture Single의 라인업, 이벤트, 선수 통계 간 ID 참조 정합성을 검사한다. */
+/**
+ * API Sports Fixture Single의 라인업, 이벤트, 선수 통계 간 ID 참조 정합성을 검사한다.
+ *
+ * API Sports의 `subst` 이벤트는 `player`와 `assist`에 sub-in/out을 일관되게 넣지 않으므로,
+ * 라인업 상태로 두 방향 모두 검사한다.
+ */
 class CrossReferenceInspector : QualityInspector<ApiSportsFixtureSingleRootDto> {
     override val inspectionName = InspectionName.of("CROSS_REFERENCE")
 
@@ -103,16 +108,10 @@ class CrossReferenceInspector : QualityInspector<ApiSportsFixtureSingleRootDto> 
         path: String,
     ) {
         val teamId = lineup.teamId
-        event.player?.id?.takeIf { lineup.usableForMembershipComparison && it > 0 }?.let { playerId ->
+        listOf("player" to event.player?.id, "assist" to event.assist?.id).forEach { (field, id) ->
+            val playerId = id?.takeIf { lineup.usableForMembershipComparison && it > 0 } ?: return@forEach
             if (playerId !in lineup.allPlayerIds) {
-                findings += issue(Code.SUBSTITUTION_OUT_PLAYER_NOT_IN_LINEUP, "Substitution out player is not in lineup", "$path.player.id", "events", evidence(responseIndex, teamId, playerId, "eventIndex" to eventIndex.toString()))
-            }
-        }
-        event.assist?.id?.takeIf { it > 0 }?.let { playerId ->
-            if (lineup.usableForMembershipComparison && playerId !in lineup.allPlayerIds) {
-                findings += issue(Code.SUBSTITUTION_IN_PLAYER_NOT_IN_LINEUP, "Substitution in player is not in lineup", "$path.assist.id", "events", evidence(responseIndex, teamId, playerId, "eventIndex" to eventIndex.toString()))
-            } else if (lineup.usableForMembershipComparison && playerId !in lineup.substitutePlayerIds) {
-                findings += issue(Code.SUBSTITUTION_IN_PLAYER_NOT_BENCH, "Substitution in player is not on bench", "$path.assist.id", "events", evidence(responseIndex, teamId, playerId, "eventIndex" to eventIndex.toString()))
+                findings += issue(Code.SUBSTITUTION_PLAYER_NOT_IN_LINEUP, "Substitution player is not in lineup", "$path.$field.id", "events", evidence(responseIndex, teamId, playerId, "eventIndex" to eventIndex.toString()))
             }
         }
     }
@@ -133,24 +132,24 @@ class CrossReferenceInspector : QualityInspector<ApiSportsFixtureSingleRootDto> 
             if (event?.type != "subst") return@eventLoop
             val teamId = event.team?.id?.takeIf { it > 0 } ?: return@eventLoop
             val activeSet = activeSets[teamId] ?: return@eventLoop
-            val outPlayerId = event.player?.id?.takeIf { it > 0 }
-            val inPlayerId = event.assist?.id?.takeIf { it > 0 }
+            val playerId = event.player?.id?.takeIf { it > 0 }
+            val assistId = event.assist?.id?.takeIf { it > 0 }
 
-            if (outPlayerId == null || inPlayerId == null || outPlayerId == inPlayerId) {
-                activeSets.remove(teamId)
-                return@eventLoop
-            }
-            if (outPlayerId !in activeSet) {
-                findings += issue(Code.SUBSTITUTION_OUT_PLAYER_NOT_ACTIVE, "Substitution out player is not active", "$.response[$responseIndex].events[$eventIndex].player.id", "events", evidence(responseIndex, teamId, outPlayerId, "eventIndex" to eventIndex.toString()))
-                activeSets.remove(teamId)
-                return@eventLoop
-            }
-            if (inPlayerId in activeSet) {
-                findings += issue(Code.SUBSTITUTION_IN_PLAYER_ALREADY_ACTIVE, "Substitution in player is already active", "$.response[$responseIndex].events[$eventIndex].assist.id", "events", evidence(responseIndex, teamId, inPlayerId, "eventIndex" to eventIndex.toString()))
+            if (playerId == null || assistId == null || playerId == assistId) {
                 activeSets.remove(teamId)
                 return@eventLoop
             }
 
+            val substitution =
+                listOf(playerId to assistId, assistId to playerId)
+                    .firstOrNull { (outPlayerId, inPlayerId) -> outPlayerId in activeSet && inPlayerId !in activeSet }
+            if (substitution == null) {
+                findings += issue(Code.SUBSTITUTION_PLAYERS_CANNOT_BE_APPLIED, "Substitution players cannot be applied to the active lineup", "$.response[$responseIndex].events[$eventIndex]", "events", evidence(responseIndex, teamId, playerId, "eventIndex" to eventIndex.toString(), "assistPlayerId" to assistId.toString()))
+                activeSets.remove(teamId)
+                return@eventLoop
+            }
+
+            val (outPlayerId, inPlayerId) = substitution
             activeSet.remove(outPlayerId)
             activeSet.add(inPlayerId)
         }
@@ -244,11 +243,8 @@ class CrossReferenceInspector : QualityInspector<ApiSportsFixtureSingleRootDto> 
         BENCH_STARTER_FLAG_CONFLICT,
         EVENT_PLAYER_NOT_IN_LINEUP,
         EVENT_ASSIST_NOT_IN_LINEUP,
-        SUBSTITUTION_OUT_PLAYER_NOT_IN_LINEUP,
-        SUBSTITUTION_IN_PLAYER_NOT_IN_LINEUP,
-        SUBSTITUTION_IN_PLAYER_NOT_BENCH,
-        SUBSTITUTION_OUT_PLAYER_NOT_ACTIVE,
-        SUBSTITUTION_IN_PLAYER_ALREADY_ACTIVE,
+        SUBSTITUTION_PLAYER_NOT_IN_LINEUP,
+        SUBSTITUTION_PLAYERS_CANNOT_BE_APPLIED,
         ;
 
         override val value: String

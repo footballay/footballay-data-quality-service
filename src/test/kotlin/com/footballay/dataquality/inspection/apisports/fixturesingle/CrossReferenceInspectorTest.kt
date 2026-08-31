@@ -8,13 +8,12 @@ class CrossReferenceInspectorTest {
     private val inspector = CrossReferenceInspector()
 
     @Test
-    fun `does not report matching lineup player statistics events and substitutions`() {
+    fun `does not report matching lineup player statistics events and substitutions in either API Sports field order`() {
         val result =
             inspector.inspect(
                 root(
-                    lineups = listOf(lineup(1, start = listOf(11), bench = listOf(12)), lineup(2, start = listOf(21), bench = listOf(22))),
-                    players = listOf(statistics(1, 11 to false, 12 to true), statistics(2, 21 to false, 22 to true)),
-                    events = listOf(event(1, "Goal", 11), event(1, "subst", 11, 12)),
+                    lineups = listOf(lineup(1, start = startingEleven(11), bench = listOf(22)), lineup(2, start = startingEleven(31), bench = listOf(42))),
+                    events = listOf(event(1, "Goal", 11), event(1, "subst", 11, 22), event(2, "subst", 42, 31)),
                 ),
             )
 
@@ -50,7 +49,7 @@ class CrossReferenceInspectorTest {
     }
 
     @Test
-    fun `reports event and substitution lineup reference violations without generic duplicates`() {
+    fun `reports only substitution players that are absent from the lineup`() {
         val result =
             inspector.inspect(
                 root(
@@ -63,10 +62,8 @@ class CrossReferenceInspectorTest {
             .containsExactlyInAnyOrder(
                 "EVENT_PLAYER_NOT_IN_LINEUP",
                 "EVENT_ASSIST_NOT_IN_LINEUP",
-                "SUBSTITUTION_OUT_PLAYER_NOT_IN_LINEUP",
-                "SUBSTITUTION_IN_PLAYER_NOT_BENCH",
-                "SUBSTITUTION_IN_PLAYER_NOT_IN_LINEUP",
-                "SUBSTITUTION_OUT_PLAYER_NOT_ACTIVE",
+                "SUBSTITUTION_PLAYER_NOT_IN_LINEUP",
+                "SUBSTITUTION_PLAYER_NOT_IN_LINEUP",
             )
     }
 
@@ -82,10 +79,9 @@ class CrossReferenceInspectorTest {
 
         assertThat(result.map { it.inspectionRuleCode.value })
             .containsExactlyInAnyOrder(
-                "SUBSTITUTION_OUT_PLAYER_NOT_IN_LINEUP",
-                "SUBSTITUTION_OUT_PLAYER_NOT_ACTIVE",
-                "SUBSTITUTION_IN_PLAYER_NOT_BENCH",
-                "SUBSTITUTION_IN_PLAYER_ALREADY_ACTIVE",
+                "SUBSTITUTION_PLAYER_NOT_IN_LINEUP",
+                "SUBSTITUTION_PLAYERS_CANNOT_BE_APPLIED",
+                "SUBSTITUTION_PLAYERS_CANNOT_BE_APPLIED",
             )
     }
 
@@ -165,7 +161,7 @@ class CrossReferenceInspectorTest {
                     ),
                 )
 
-            assertThat(result.map { it.inspectionRuleCode.value }).doesNotContain("SUBSTITUTION_OUT_PLAYER_NOT_ACTIVE", "SUBSTITUTION_IN_PLAYER_ALREADY_ACTIVE")
+            assertThat(result.map { it.inspectionRuleCode.value }).doesNotContain("SUBSTITUTION_PLAYERS_CANNOT_BE_APPLIED")
         }
     }
 
@@ -179,7 +175,7 @@ class CrossReferenceInspectorTest {
                 ),
             )
 
-        assertThat(result.map { it.inspectionRuleCode.value }).doesNotContain("SUBSTITUTION_IN_PLAYER_NOT_BENCH")
+        assertThat(result.map { it.inspectionRuleCode.value }).doesNotContain("SUBSTITUTION_PLAYER_NOT_IN_LINEUP")
     }
 
     @Test
@@ -205,9 +201,7 @@ class CrossReferenceInspectorTest {
                     "PLAYER_STATISTICS_PLAYER_NOT_IN_LINEUP",
                     "EVENT_PLAYER_NOT_IN_LINEUP",
                     "EVENT_ASSIST_NOT_IN_LINEUP",
-                    "SUBSTITUTION_OUT_PLAYER_NOT_IN_LINEUP",
-                    "SUBSTITUTION_IN_PLAYER_NOT_IN_LINEUP",
-                    "SUBSTITUTION_IN_PLAYER_NOT_BENCH",
+                    "SUBSTITUTION_PLAYER_NOT_IN_LINEUP",
                 )
         }
     }

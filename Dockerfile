@@ -28,4 +28,7 @@ USER footballay
 
 COPY build/docker/application.jar /app/application.jar
 
+# Java4Shell(CVE-2026-114938) 완화: AVX-512 Base64 intrinsic 비활성화
+ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
+
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]

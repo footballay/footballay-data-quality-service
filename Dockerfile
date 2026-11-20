@@ -28,7 +28,10 @@ USER footballay
 
 COPY build/docker/application.jar /app/application.jar
 
-# Java4Shell(CVE-2026-114938) 완화: AVX-512 Base64 intrinsic 비활성화
+# [보안] Java4Shell(CVE-2026-114938) 대응 - 2026/11/20
+# OpenJDK AVX-512 Base64 디코딩 intrinsic 취약점 완화를 위해 -XX:-UseBASE64Intrinsics 를 기본 적용한다.
+# 운영 배포는 footballay-data-quality-service-action scripts/deploy.sh 에서도 JAVA_TOOL_OPTIONS로 강제 적용한다.
+# 수정 JRE(Temurin 17.0.21.1+2 이상) 이미지로 고정한 뒤 제거 여부를 검토한다.
 ENV JAVA_TOOL_OPTIONS="-XX:-UseBASE64Intrinsics"
 
 ENTRYPOINT ["java", "-jar", "/app/application.jar"]
